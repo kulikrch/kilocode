@@ -254,7 +254,7 @@ export const Event = {
     "session.diff",
     z.object({
       sessionID: SessionID.zod,
-      diff: Snapshot.FileDiff.array(),
+      diff: Snapshot.FileDiff.zod.array(),
     }),
   ),
   Error: BusEvent.define(
