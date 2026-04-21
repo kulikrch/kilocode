@@ -120,6 +120,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   /** Tracks all pending/in-flight requests */
   private pendingRequests: PendingRequest[] = []
   private fimPromptBuilder: FimPromptBuilder
+  private contextProvider: AutocompleteContextProvider
   private model: AutocompleteModel
   private costTrackingCallback: CostTrackingCallback
   private getSettings: () => AutocompleteServiceSettings | null
@@ -129,6 +130,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   /** The pending request associated with the current debounce timer (if any) */
   private debouncedPendingRequest: PendingRequest | null = null
   private isFirstCall: boolean = true
+  private workspacePath = ""
   private ignoreController: Promise<FileIgnoreController>
   /** Abort controller for the current in-flight FIM request */
   private fimAbortController: AbortController | null = null
@@ -160,22 +162,18 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     this.costTrackingCallback = costTrackingCallback
     this.getSettings = getSettings
     this.onFatalError = onFatalError ?? null
-
-    this.ignoreController = (async () => {
-      const ignoreController = new FileIgnoreController(workspacePath)
-      await ignoreController.initialize()
-      return ignoreController
-    })()
+    this.workspacePath = workspacePath
+    this.ignoreController = this.createIgnore(workspacePath)
 
     const ide = new VsCodeIde(context)
     this.contextService = new ContextRetrievalService(ide)
-    const contextProvider: AutocompleteContextProvider = {
+    this.contextProvider = {
       ide,
       contextService: this.contextService,
       model,
       ignoreController: this.ignoreController,
     }
-    this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
+    this.fimPromptBuilder = new FimPromptBuilder(this.contextProvider)
 
     this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
     this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
@@ -184,6 +182,39 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       this.telemetry?.captureAcceptSuggestion(this.lastSuggestion?.length)
       vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
     })
+  }
+
+  private async createIgnore(dir: string): Promise<FileIgnoreController> {
+    const controller = new FileIgnoreController(dir)
+    await controller.initialize()
+    return controller
+  }
+
+  public updateWorkspacePath(dir: string): void {
+    if (dir === this.workspacePath) {
+      return
+    }
+
+    this.clearWorkspaceState()
+    this.workspacePath = dir
+    this.ignoreController = this.createIgnore(dir)
+    this.contextProvider.ignoreController = this.ignoreController
+  }
+
+  private clearWorkspaceState(): void {
+    this.suggestionsHistory = []
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    this.settleDebouncedPendingRequest()
+    this.pendingRequests.length = 0
+    this.fimAbortController?.abort()
+    this.fimAbortController = null
+    this.isFirstCall = true
+    this.lastSuggestion = null
+    this.telemetry?.cancelVisibilityTracking()
+    void vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
   }
 
   public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {

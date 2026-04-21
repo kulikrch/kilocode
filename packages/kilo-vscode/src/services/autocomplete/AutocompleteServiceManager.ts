@@ -119,6 +119,7 @@ export class AutocompleteServiceManager {
 
   public async load() {
     this.settings = readSettings()
+    this.inlineCompletionProvider.updateWorkspacePath(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "")
 
     if (this.settings.model) {
       this.model.setModel(this.settings.model)
