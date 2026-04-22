@@ -305,7 +305,7 @@ export class AutocompleteServiceManager {
     await vscode.commands.executeCommand(
       "setContext",
       "kilocode.autocomplete.enableSmartInlineTaskKeybinding",
-      Boolean(this.settings?.enableAutoTrigger && this.settings.enableSmartInlineTaskKeybinding),
+      this.settings?.enableSmartInlineTaskKeybinding || false,
     )
   }
 
