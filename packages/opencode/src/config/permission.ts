@@ -61,6 +61,7 @@ const InnerSchema = Schema.Union([ObjectShape, Action]).annotate({
 // user's original insertion order.  A plain string input (the Action branch of
 // the union) becomes `{ "*": action }`.
 const transform = (x: unknown): Record<string, Rule> => {
+  if (x === null) return { "*": null }
   if (typeof x === "string") return { "*": x as Action }
   const obj = x as { __originalKeys?: string[] } & Record<string, unknown>
   const { __originalKeys, ...rest } = obj

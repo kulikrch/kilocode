@@ -9,7 +9,12 @@ import { Snapshot } from "@/snapshot"
 import { Log } from "@/util"
 
 export namespace WorktreeDiff {
-  export const Item = Snapshot.FileDiff.extend({
+  export const Item = z.object({
+    file: z.string(),
+    patch: z.string(),
+    additions: z.number(),
+    deletions: z.number(),
+    status: z.enum(["added", "deleted", "modified"]).optional(),
     before: z.string(),
     after: z.string(),
     tracked: z.boolean(),

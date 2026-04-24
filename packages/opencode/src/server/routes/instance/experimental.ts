@@ -342,7 +342,7 @@ export const ExperimentalRoutes = lazy(() =>
             description: "File diffs",
             content: {
               "application/json": {
-                schema: resolver(z.array(Snapshot.FileDiff)),
+                schema: resolver(z.array(Snapshot.FileDiff.zod)),
               },
             },
           },
@@ -365,7 +365,7 @@ export const ExperimentalRoutes = lazy(() =>
         log.info("computing diff", { dir, base })
         const diffs = await WorktreeDiff.full({ dir, base, log })
         return c.json(
-          diffs.map((diff) => ({
+          diffs.map((diff: WorktreeDiff.Item) => ({
             file: diff.file,
             before: diff.before,
             after: diff.after,
