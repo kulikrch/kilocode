@@ -1,0 +1,76 @@
+{
+  "date": "2026-04-27T08:16:41.527Z",
+  "mode": "variant-b",
+  "seed": [
+    "kilo-code",
+    "@kilocode/cli"
+  ],
+  "packages": [
+    {
+      "dir": "kilo-gateway",
+      "name": "@kilocode/kilo-gateway"
+    },
+    {
+      "dir": "kilo-i18n",
+      "name": "@kilocode/kilo-i18n"
+    },
+    {
+      "dir": "kilo-telemetry",
+      "name": "@kilocode/kilo-telemetry"
+    },
+    {
+      "dir": "kilo-ui",
+      "name": "@kilocode/kilo-ui"
+    },
+    {
+      "dir": "kilo-vscode",
+      "name": "kilo-code"
+    },
+    {
+      "dir": "opencode",
+      "name": "@kilocode/cli"
+    },
+    {
+      "dir": "plugin",
+      "name": "@kilocode/plugin"
+    },
+    {
+      "dir": "script",
+      "name": "@opencode-ai/script"
+    },
+    {
+      "dir": "sdk/js",
+      "name": "@kilocode/sdk"
+    },
+    {
+      "dir": "shared",
+      "name": "@opencode-ai/shared"
+    },
+    {
+      "dir": "ui",
+      "name": "@opencode-ai/ui"
+    }
+  ],
+  "root": [
+    "package.json",
+    "bun.lock",
+    "bunfig.toml",
+    "turbo.json",
+    "tsconfig.json",
+    ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
+    ".prettierignore",
+    ".oxlintrc.json",
+    "LICENSE",
+    "README.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "PRIVACY.md",
+    "AGENTS.md",
+    ".github/workflows/test-vscode.yml",
+    ".github/actions/setup-bun/action.yml",
+    "script/generate.ts",
+    "script/format.ts"
+  ]
+}

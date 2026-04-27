@@ -1,0 +1,149 @@
+[
+  {
+    "package": "root",
+    "command": "bun run lint",
+    "exit_code": 1,
+    "seconds": 8.3,
+    "status": "FAIL"
+  },
+  {
+    "package": "root",
+    "command": "bun run typecheck",
+    "exit_code": 2,
+    "seconds": 1.6,
+    "status": "FAIL"
+  },
+  {
+    "package": "kilo-gateway",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 0.4,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-gateway",
+    "command": "bun run build",
+    "exit_code": 0,
+    "seconds": 4.7,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-i18n",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 0.2,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-telemetry",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 0.4,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-telemetry",
+    "command": "bun run build",
+    "exit_code": 0,
+    "seconds": 3.3,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-telemetry",
+    "command": "bun run test",
+    "exit_code": 0,
+    "seconds": 5.5,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-vscode",
+    "command": "bun run typecheck",
+    "exit_code": 1,
+    "seconds": 13.5,
+    "status": "FAIL"
+  },
+  {
+    "package": "kilo-vscode",
+    "command": "bun run lint",
+    "exit_code": 0,
+    "seconds": 5.0,
+    "status": "OK"
+  },
+  {
+    "package": "kilo-vscode",
+    "command": "bun run test:unit",
+    "exit_code": 1,
+    "seconds": 95.5,
+    "status": "FAIL"
+  },
+  {
+    "package": "opencode",
+    "command": "bun run typecheck",
+    "exit_code": 2,
+    "seconds": 4.7,
+    "status": "FAIL"
+  },
+  {
+    "package": "opencode",
+    "command": "bun run build",
+    "exit_code": 1,
+    "seconds": 0.5,
+    "status": "FAIL"
+  },
+  {
+    "package": "opencode",
+    "command": "bun run test",
+    "exit_code": 1,
+    "seconds": 376.4,
+    "status": "FAIL"
+  },
+  {
+    "package": "plugin",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 2.3,
+    "status": "OK"
+  },
+  {
+    "package": "plugin",
+    "command": "bun run build",
+    "exit_code": 0,
+    "seconds": 5.0,
+    "status": "OK"
+  },
+  {
+    "package": "shared",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 0.7,
+    "status": "OK"
+  },
+  {
+    "package": "shared",
+    "command": "bun run test",
+    "exit_code": 0,
+    "seconds": 14.8,
+    "status": "OK"
+  },
+  {
+    "package": "ui",
+    "command": "bun run typecheck",
+    "exit_code": 2,
+    "seconds": 4.0,
+    "status": "FAIL"
+  },
+  {
+    "package": "sdk-js",
+    "command": "bun run typecheck",
+    "exit_code": 0,
+    "seconds": 0.3,
+    "status": "OK"
+  },
+  {
+    "package": "sdk-js",
+    "command": "bun run build",
+    "exit_code": 1,
+    "seconds": 10.6,
+    "status": "FAIL"
+  }
+]
