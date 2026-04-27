@@ -7,10 +7,6 @@
   "packageManager": "bun@1.3.11",
   "scripts": {
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
-    "dev:desktop": "bun --cwd packages/desktop tauri dev",
-    "dev:web": "bun --cwd packages/app dev",
-    "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",
-    "dev:storybook": "bun --cwd packages/storybook storybook",
     "lint": "oxlint",
     "typecheck": "bun turbo typecheck",
     "postinstall": "bun run --cwd packages/opencode fix-node-pty",
@@ -18,7 +14,9 @@
     "random": "echo 'Random script'",
     "hello": "echo 'Hello World!'",
     "test": "echo 'do not run tests from root' && exit 1",
-    "extension": "bun --cwd packages/kilo-vscode script/launch.ts"
+    "extension": "bun --cwd packages/kilo-vscode script/launch.ts",
+    "fork:variant-b:plan": "bun script/fork-variant-b.ts --plan",
+    "fork:variant-b:create": "bun script/fork-variant-b.ts --out ../kilocode-vscode-cli-fork"
   },
   "workspaces": {
     "packages": [
