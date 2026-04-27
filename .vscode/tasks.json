@@ -20,8 +20,8 @@
     {
       "label": "VSCode - ESBuild",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "watch:esbuild"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "watch:esbuild"],
       "group": "build",
       "problemMatcher": "$esbuild-watch",
       "isBackground": true,
@@ -36,8 +36,8 @@
     {
       "label": "VSCode - TSC",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "watch:tsc"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "watch:tsc"],
       "group": "build",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
@@ -52,8 +52,8 @@
     {
       "label": "VSCode - CLI Watch",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "watch:cli"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "watch:cli"],
       "group": "build",
       "isBackground": true,
       "presentation": {
@@ -68,8 +68,8 @@
     {
       "label": "VSCode - Install",
       "type": "shell",
-      "command": "bun",
-      "args": ["install", "--frozen-lockfile"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "install", "--frozen-lockfile"],
       "group": "build",
       "presentation": {
         "reveal": "silent"
@@ -82,8 +82,8 @@
     {
       "label": "VSCode - Compile",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "compile"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "compile"],
       "group": "build",
       "presentation": {
         "reveal": "silent"
@@ -97,8 +97,8 @@
     {
       "label": "VSCode - Tests",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "watch-tests"],
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "watch-tests"],
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "presentation": {
@@ -118,7 +118,8 @@
     {
       "label": "VSCode - DevSnapshot - Build",
       "type": "shell",
-      "command": "bun run snapshot:build",
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "snapshot:build"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -136,7 +137,8 @@
     {
       "label": "VSCode - DevSnapshot - Install",
       "type": "shell",
-      "command": "bun run snapshot:install",
+      "command": "bunx",
+      "args": ["bun@1.3.11", "run", "snapshot:install"],
       "group": "build",
       "presentation": {
         "echo": true,

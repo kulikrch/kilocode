@@ -54,8 +54,14 @@ const plugin = createSolidTransformPlugin()
 const skipEmbedWebUi = process.argv.includes("--skip-embed-web-ui")
 
 const createEmbeddedWebUIBundle = async () => {
-  console.log(`Building Web UI to embed in the binary`)
   const appDir = path.join(import.meta.dirname, "../../app")
+  // kilocode_change start - Variant B removes packages/app, so skip embedded web UI build when absent
+  if (!fs.existsSync(appDir)) {
+    console.log(`Skipping embedded Web UI build: app directory not found at ${appDir}`)
+    return null
+  }
+  // kilocode_change end
+  console.log(`Building Web UI to embed in the binary`)
   const dist = path.join(appDir, "dist")
   await $`bun run --cwd ${appDir} build`
   const files = (await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: dist })))
