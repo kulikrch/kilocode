@@ -242,7 +242,7 @@ for (const item of targets) {
       KILO_CHANNEL: `'${Script.channel}'`,
       KILO_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
     },
-  })
+  } as any)
 
   // kilocode_change start - fix Nix-specific ELF interpreter paths for Linux binaries
   if (item.os === "linux") {
