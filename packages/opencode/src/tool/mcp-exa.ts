@@ -1,6 +1,7 @@
 import { Duration, Effect, Schema } from "effect"
 import { HttpClient, HttpClientRequest } from "effect/unstable/http"
 
+const MCP_EXA_DISABLED = true
 const URL = process.env.EXA_API_KEY
   ? `https://mcp.exa.ai/mcp?exaApiKey=${encodeURIComponent(process.env.EXA_API_KEY)}`
   : "https://mcp.exa.ai/mcp"
@@ -59,6 +60,7 @@ export const call = <F extends Schema.Struct.Fields>(
   timeout: Duration.Input,
 ) =>
   Effect.gen(function* () {
+    if (MCP_EXA_DISABLED) return undefined
     const request = yield* HttpClientRequest.post(URL).pipe(
       HttpClientRequest.accept("application/json, text/event-stream"),
       HttpClientRequest.schemaBodyJson(McpRequest(args))({

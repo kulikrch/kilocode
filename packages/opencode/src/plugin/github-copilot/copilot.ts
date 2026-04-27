@@ -8,6 +8,7 @@ import { CopilotModels } from "./models"
 import { MessageV2 } from "@/session/message-v2"
 
 const log = Log.create({ service: "plugin.copilot" })
+const COPILOT_DISABLED = true
 
 const CLIENT_ID = "Ov23li8tweQw6odWQebz"
 // Add a small safety buffer when polling to avoid hitting the server
@@ -55,6 +56,7 @@ function fix(model: Model, url: string): Model {
 }
 
 export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
+  if (COPILOT_DISABLED) return {}
   const sdk = input.client
   return {
     provider: {

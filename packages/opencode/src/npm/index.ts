@@ -11,6 +11,8 @@ import { EffectFlock } from "@opencode-ai/shared/util/effect-flock"
 
 import { makeRuntime } from "../effect/runtime"
 
+const NPM_DISABLED = true
+
 export class InstallFailedError extends Schema.TaggedErrorClass<InstallFailedError>()("NpmInstallFailedError", {
   add: Schema.Array(Schema.String).pipe(Schema.optional),
   dir: Schema.String,
@@ -77,6 +79,25 @@ export const layer = Layer.effect(
     const fs = yield* FileSystem.FileSystem
     const flock = yield* EffectFlock.Service
     const directory = (pkg: string) => path.join(global.cache, "packages", sanitize(pkg))
+
+    if (NPM_DISABLED) {
+      return Service.of({
+        add: Effect.fn("Npm.add.disabled")(function* (pkg: string) {
+          return {
+            directory: directory(pkg),
+            entrypoint: Option.none(),
+          } satisfies EntryPoint
+        }),
+        install: Effect.fn("Npm.install.disabled")(function* (_dir: string, _input?: { add: { name: string; version?: string }[] }) {}),
+        outdated: Effect.fn("Npm.outdated.disabled")(function* (_pkg: string, _cachedVersion: string) {
+          return false
+        }),
+        which: Effect.fn("Npm.which.disabled")(function* (_pkg: string) {
+          return Option.none<string>()
+        }),
+      })
+    }
+
     const reify = (input: { dir: string; add?: string[] }) =>
       Effect.gen(function* () {
         yield* flock.acquire(`npm-install:${input.dir}`)

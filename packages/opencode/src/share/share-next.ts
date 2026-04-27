@@ -15,7 +15,7 @@ import { Log } from "@/util"
 import { SessionShareTable } from "./share.sql"
 
 const log = Log.create({ service: "share-next" })
-const disabled = process.env["KILO_DISABLE_SHARE"] === "true" || process.env["KILO_DISABLE_SHARE"] === "1"
+const disabled = true
 
 export type Api = {
   create: string
@@ -207,6 +207,9 @@ export const layer = Layer.effect(
     )
 
     const request = Effect.fn("ShareNext.request")(function* () {
+      if (disabled) {
+        return { headers: {}, api: legacyApi, baseUrl: "" } satisfies Req
+      }
       const headers: Record<string, string> = {}
       const active = yield* account.active()
       if (Option.isNone(active) || !active.value.active_org_id) {

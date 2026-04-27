@@ -13,6 +13,7 @@ import semver from "semver"
 import { InstallationChannel, InstallationVersion } from "./version"
 
 const log = Log.create({ service: "installation" })
+const INSTALLATION_DISABLED = true
 
 export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
 
@@ -93,6 +94,21 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
   Layer.effect(
     Service,
     Effect.gen(function* () {
+      if (INSTALLATION_DISABLED) {
+        return Service.of({
+          info: Effect.fn("Installation.info.disabled")(function* () {
+            return { version: InstallationVersion, latest: InstallationVersion }
+          }),
+          method: Effect.fn("Installation.method.disabled")(function* () {
+            return "unknown" as Method
+          }),
+          latest: Effect.fn("Installation.latest.disabled")(function* (_method?: Method) {
+            return InstallationVersion
+          }),
+          upgrade: Effect.fn("Installation.upgrade.disabled")(function* (_method: Method, _target: string) {}),
+        })
+      }
+
       const http = yield* HttpClient.HttpClient
       const httpOk = HttpClient.filterStatusOk(withTransientReadRetry(http))
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner

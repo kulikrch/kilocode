@@ -17,6 +17,7 @@ import { Npm } from "../npm"
 import { TsCheck } from "../kilocode/ts-check" // kilocode_change
 
 const log = Log.create({ service: "lsp.server" })
+const LSP_SERVER_DISABLED = true
 const pathExists = async (p: string) =>
   fs
     .stat(p)
@@ -1952,4 +1953,49 @@ export const JuliaLS: Info = {
       }),
     }
   },
+}
+
+const noSpawn: Info["spawn"] = async () => undefined
+
+if (LSP_SERVER_DISABLED) {
+  const all: Info[] = [
+    Deno,
+    Typescript,
+    Vue,
+    ESLint,
+    Oxlint,
+    Biome,
+    Gopls,
+    Rubocop,
+    Ty,
+    Pyright,
+    ElixirLS,
+    Zls,
+    CSharp,
+    FSharp,
+    SourceKit,
+    RustAnalyzer,
+    Clangd,
+    Svelte,
+    Astro,
+    JDTLS,
+    KotlinLS,
+    YamlLS,
+    LuaLS,
+    PHPIntelephense,
+    Prisma,
+    Dart,
+    Ocaml,
+    BashLS,
+    TerraformLS,
+    TexLab,
+    DockerfileLS,
+    Gleam,
+    Clojure,
+    Nixd,
+    Tinymist,
+    HLS,
+    JuliaLS,
+  ]
+  for (const item of all) item.spawn = noSpawn
 }
