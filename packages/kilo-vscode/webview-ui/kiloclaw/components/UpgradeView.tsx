@@ -23,7 +23,7 @@ export function UpgradeView() {
         </CardDescription>
         <CardActions>
           <div />
-          <Button variant="primary" onClick={() => claw.openExternal("https://app.kilo.ai/claw")}>
+          <Button variant="primary" onClick={() => claw.openExternal("https://app.tmp_not_exist_for_test.ru/claw")}>
             {t("kiloClaw.upgrade.openDashboard")}
           </Button>
         </CardActions>

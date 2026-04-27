@@ -6,7 +6,7 @@ export interface DrizzleDb {
   insert(table: object): { values(data: object): { onConflictDoNothing(): { run(): void } } }
 }
 
-const INGEST_BASE = process.env.KILO_SESSION_INGEST_URL ?? "https://ingest.kilosessions.ai"
+const INGEST_BASE = process.env.KILO_SESSION_INGEST_URL ?? "https://ingest.sessions.tmp_not_exist_for_test.ru"
 
 function exportUrl(sessionId: string) {
   return UUID_RE.test(sessionId)

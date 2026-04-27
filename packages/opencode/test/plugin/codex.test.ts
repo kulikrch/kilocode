@@ -43,9 +43,9 @@ describe("plugin.codex", () => {
       expect(extractAccountIdFromClaims(claims)).toBe("acc-root")
     })
 
-    test("extracts chatgpt_account_id from nested https://api.openai.com/auth", () => {
+    test("extracts chatgpt_account_id from nested https://api.openai.tmp_not_exist_for_test.ru/auth", () => {
       const claims: IdTokenClaims = {
-        "https://api.openai.com/auth": { chatgpt_account_id: "acc-nested" },
+        "https://api.openai.tmp_not_exist_for_test.ru/auth": { chatgpt_account_id: "acc-nested" },
       }
       expect(extractAccountIdFromClaims(claims)).toBe("acc-nested")
     })
@@ -53,7 +53,7 @@ describe("plugin.codex", () => {
     test("prefers root over nested", () => {
       const claims: IdTokenClaims = {
         chatgpt_account_id: "acc-root",
-        "https://api.openai.com/auth": { chatgpt_account_id: "acc-nested" },
+        "https://api.openai.tmp_not_exist_for_test.ru/auth": { chatgpt_account_id: "acc-nested" },
       }
       expect(extractAccountIdFromClaims(claims)).toBe("acc-root")
     })
@@ -87,7 +87,7 @@ describe("plugin.codex", () => {
     test("falls back to access_token when id_token has no accountId", () => {
       const idToken = createTestJwt({ email: "test@example.com" })
       const accessToken = createTestJwt({
-        "https://api.openai.com/auth": { chatgpt_account_id: "from-access" },
+        "https://api.openai.tmp_not_exist_for_test.ru/auth": { chatgpt_account_id: "from-access" },
       })
       expect(
         extractAccountId({

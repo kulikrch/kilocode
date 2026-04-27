@@ -142,7 +142,7 @@ export const dict = {
   "provider.connect.opencodeZen.line2":
     "Sa jednim API ključem dobijaš pristup modelima kao što su Claude, GPT, Gemini, GLM i drugi.",
   "provider.connect.opencodeZen.visit.prefix": "Posjeti ",
-  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
+  "provider.connect.opencodeZen.visit.link": "opencode.tmp_not_exist_for_test.ru/zen",
   "provider.connect.opencodeZen.visit.suffix": " da preuzmeš svoj API ključ.",
   "provider.connect.oauth.code.visit.prefix": "Posjeti ",
   "provider.connect.oauth.code.visit.link": "ovaj link",
@@ -764,7 +764,7 @@ export const dict = {
   "provider.custom.field.name.label": "Naziv za prikaz",
   "provider.custom.field.name.placeholder": "Moj AI provajder",
   "provider.custom.field.baseURL.label": "Osnovni URL",
-  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.com/v1",
+  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.tmp_not_exist_for_test.ru/v1",
   "provider.custom.field.apiKey.label": "API ključ",
   "provider.custom.field.apiKey.placeholder": "API ključ",
   "provider.custom.field.apiKey.description":

@@ -212,12 +212,12 @@ export async function get() {
       ...(kiloOrgId ? { kilocodeOrganizationId: kiloOrgId } : {}),
     }
     const defaultBaseURL = kiloOrgId
-      ? `https://api.kilo.ai/api/organizations/${kiloOrgId}`
-      : "https://api.kilo.ai/api/openrouter"
+      ? `https://api.sessions.tmp_not_exist_for_test.ru/api/organizations/${kiloOrgId}`
+      : "https://api.sessions.tmp_not_exist_for_test.ru/api/openrouter"
     const providerBaseURL = normalizedBaseURL ?? defaultBaseURL
     const ensureTrailingSlash = (value: string): string => (value.endsWith("/") ? value : `${value}/`)
     const apertisConfig = config.provider?.apertis?.options
-    const apertisBaseURL = apertisConfig?.baseURL ?? "https://api.apertis.ai/v1"
+    const apertisBaseURL = apertisConfig?.baseURL ?? "https://api.apertis.tmp_not_exist_for_test.ru/v1"
     const apertisFetchOptions = {
       ...(apertisConfig?.baseURL ? { baseURL: apertisConfig.baseURL } : {}),
     }
@@ -256,7 +256,7 @@ export async function get() {
     }
   } else if (!providers["apertis"]) {
     const apertisConfig = config.provider?.apertis?.options
-    const apertisBaseURL = apertisConfig?.baseURL ?? "https://api.apertis.ai/v1"
+    const apertisBaseURL = apertisConfig?.baseURL ?? "https://api.apertis.tmp_not_exist_for_test.ru/v1"
     const apertisFetchOptions = {
       ...(apertisConfig?.baseURL ? { baseURL: apertisConfig.baseURL } : {}),
     }

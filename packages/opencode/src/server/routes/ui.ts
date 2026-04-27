@@ -13,7 +13,7 @@ const embeddedUIPromise = Flag.KILO_DISABLE_EMBEDDED_WEB_UI
 const DEFAULT_CSP =
   "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' data:; connect-src 'self' data:"
 
-// kilocode_change start - csp function removed, used by proxy fallback to app.opencode.ai
+// kilocode_change start - csp function removed, used by proxy fallback to app.opencode.tmp_not_exist_for_test.ru
 // const csp = (hash = "") =>
 //   `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${hash ? ` 'sha256-${hash}'` : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' data:; connect-src 'self' data:`
 // kilocode_change end
@@ -38,7 +38,7 @@ export const UIRoutes = (): Hono =>
         return c.json({ error: "Not Found" }, 404)
       }
     } else {
-      // kilocode_change start - return 404 instead of proxying to app.opencode.ai
+      // kilocode_change start - return 404 instead of proxying to app.opencode.tmp_not_exist_for_test.ru
       return c.json({ error: "Not Found" }, 404)
       // kilocode_change end
     }

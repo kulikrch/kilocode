@@ -62,7 +62,7 @@ test("kilo loader keeps paid models when config apiKey is present", async () => 
       await Bun.write(
         path.join(dir, "kilo.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },
@@ -78,7 +78,7 @@ test("kilo loader keeps paid models when config apiKey is present", async () => 
       await Bun.write(
         path.join(dir, "kilo.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
           provider: {
             kilo: {
               options: {
@@ -110,7 +110,7 @@ test("kilo loader keeps paid models when auth exists", async () => {
       await Bun.write(
         path.join(dir, "kilo.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },
@@ -126,7 +126,7 @@ test("kilo loader keeps paid models when auth exists", async () => {
       await Bun.write(
         path.join(dir, "kilo.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },

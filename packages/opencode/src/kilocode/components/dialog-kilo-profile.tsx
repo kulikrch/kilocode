@@ -42,8 +42,8 @@ export function DialogKiloProfile(props: DialogKiloProfileProps) {
 
   // Generate usage URL based on organization context
   const usageUrl = props.currentOrgId
-    ? `https://app.kilo.ai/organizations/${props.currentOrgId}/usage-details`
-    : "https://app.kilo.ai/usage"
+    ? `https://app.tmp_not_exist_for_test.ru/organizations/${props.currentOrgId}/usage-details`
+    : "https://app.tmp_not_exist_for_test.ru/usage"
 
   return (
     <box paddingLeft={2} paddingRight={2} gap={1}>

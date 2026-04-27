@@ -5,7 +5,7 @@ export const dict = {
   "provider.connect.kiloGateway.line2":
     "Tek bir API anahtarıyla Claude, GPT, Gemini, GLM ve daha fazlası gibi modellere erişebilirsiniz.",
   "provider.connect.kiloGateway.visit.prefix": "API anahtarınızı almak için ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
+  "provider.connect.kiloGateway.visit.link": "tmp_not_exist_for_test.ru",
   "provider.connect.kiloGateway.visit.suffix": " adresini ziyaret edin.",
 
   // Provider dialog translations

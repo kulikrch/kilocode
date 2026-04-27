@@ -23,7 +23,7 @@ export type ShareData =
   | { type: "model"; data: unknown }
 
 // kilocode_change start
-/** Extract share ID from a Kilo share URL like https://app.kilo.ai/s/abc123 */
+/** Extract share ID from a Kilo share URL like https://app.tmp_not_exist_for_test.ru/s/abc123 */
 export function parseShareUrl(url: string): string | null {
   const match = url.match(/^https?:\/\/app\.kilo\.ai\/s\/([a-zA-Z0-9_-]+)$/)
   return match ? match[1] : null
@@ -144,12 +144,12 @@ export const ImportCommand = cmd({
         // kilocode_change start
         const slug = parseShareUrl(args.file)
         if (!slug) {
-          process.stdout.write(`Invalid URL format. Expected: https://app.kilo.ai/s/<id>`)
+          process.stdout.write(`Invalid URL format. Expected: https://app.tmp_not_exist_for_test.ru/s/<id>`)
           process.stdout.write(EOL)
           return
         }
 
-        const base = process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.kilosessions.ai"
+        const base = process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.sessions.tmp_not_exist_for_test.ru"
         const response = await fetch(`${base}/session/${encodeURIComponent(slug)}`)
 
         if (!response.ok) {

@@ -5,7 +5,7 @@ export const dict = {
   "provider.connect.kiloGateway.line2":
     "Med én enkelt API-nøkkel får du tilgang til modeller som Claude, GPT, Gemini, GLM og flere.",
   "provider.connect.kiloGateway.visit.prefix": "Besøk ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
+  "provider.connect.kiloGateway.visit.link": "tmp_not_exist_for_test.ru",
   "provider.connect.kiloGateway.visit.suffix": " for å hente API-nøkkelen din.",
 
   // Provider dialog translations

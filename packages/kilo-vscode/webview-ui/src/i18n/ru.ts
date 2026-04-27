@@ -142,7 +142,7 @@ export const dict = {
   "provider.connect.opencodeZen.line2":
     "С одним API ключом вы получите доступ к таким моделям как Claude, GPT, Gemini, GLM и другим.",
   "provider.connect.opencodeZen.visit.prefix": "Посетите ",
-  "provider.connect.opencodeZen.visit.link": "https://opencode.ai/zen",
+  "provider.connect.opencodeZen.visit.link": "https://opencode.tmp_not_exist_for_test.ru/zen",
   "provider.connect.opencodeZen.visit.suffix": " чтобы получить ваш API ключ.",
   "provider.connect.oauth.code.visit.prefix": "Посетите ",
   "provider.connect.oauth.code.visit.link": "эту ссылку",
@@ -764,7 +764,7 @@ export const dict = {
   "provider.custom.field.name.label": "Отображаемое имя",
   "provider.custom.field.name.placeholder": "Мой AI-провайдер",
   "provider.custom.field.baseURL.label": "Базовый URL",
-  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.com/v1",
+  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.tmp_not_exist_for_test.ru/v1",
   "provider.custom.field.apiKey.label": "API-ключ",
   "provider.custom.field.apiKey.placeholder": "API-ключ",
   "provider.custom.field.apiKey.description":

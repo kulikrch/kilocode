@@ -409,7 +409,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.tmp_not_exist_for_test.ru/",
             "X-Title": "opencode",
             "X-Source": "opencode",
           },
@@ -420,7 +420,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.tmp_not_exist_for_test.ru/",
             "X-Title": "opencode",
           },
         },
@@ -430,7 +430,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
+            "http-referer": "https://opencode.tmp_not_exist_for_test.ru/",
             "x-title": "opencode",
           },
         },
@@ -528,7 +528,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.tmp_not_exist_for_test.ru/",
             "X-Title": "opencode",
           },
         },
@@ -813,7 +813,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.tmp_not_exist_for_test.ru/",
             "X-Title": "opencode",
           },
         },

@@ -7,7 +7,7 @@ export const dict = {
   "provider.connect.kiloGateway.line2":
     "Met één enkele API key krijg je toegang tot modellen zoals Claude, GPT, Gemini, GLM en meer.",
   "provider.connect.kiloGateway.visit.prefix": "Bezoek ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
+  "provider.connect.kiloGateway.visit.link": "tmp_not_exist_for_test.ru",
   "provider.connect.kiloGateway.visit.suffix": " om je API key op te halen.",
 
   // Provider dialog translations

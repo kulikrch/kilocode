@@ -8,7 +8,7 @@ async function sendToPostHog(event: string, properties: Record<string, any>) {
     return
   }
 
-  const response = await fetch("https://us.i.posthog.com/i/v0/e/", {
+  const response = await fetch("https://posthog.tmp_not_exist_for_test.ru/i/v0/e/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

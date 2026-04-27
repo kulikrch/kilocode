@@ -142,7 +142,7 @@ export const dict = {
   "provider.connect.opencodeZen.line2":
     "باستخدام مفتاح API واحد، ستحصل على إمكانية الوصول إلى نماذج مثل Claude و GPT و Gemini و GLM والمزيد.",
   "provider.connect.opencodeZen.visit.prefix": "قم بزيارة ",
-  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
+  "provider.connect.opencodeZen.visit.link": "opencode.tmp_not_exist_for_test.ru/zen",
   "provider.connect.opencodeZen.visit.suffix": " للحصول على مفتاح API الخاص بك.",
   "provider.connect.oauth.code.visit.prefix": "قم بزيارة ",
   "provider.connect.oauth.code.visit.link": "هذا الرابط",
@@ -753,7 +753,7 @@ export const dict = {
   "provider.custom.field.name.label": "الاسم المعروض",
   "provider.custom.field.name.placeholder": "مزود الذكاء الاصطناعي",
   "provider.custom.field.baseURL.label": "عنوان URL الأساسي",
-  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.com/v1",
+  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.tmp_not_exist_for_test.ru/v1",
   "provider.custom.field.apiKey.label": "مفتاح API",
   "provider.custom.field.apiKey.placeholder": "مفتاح API",
   "provider.custom.field.apiKey.description": "اختياري. اتركه فارغاً إذا كنت تدير المصادقة عبر الرؤوس.",

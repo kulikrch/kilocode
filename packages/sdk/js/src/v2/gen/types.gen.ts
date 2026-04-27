@@ -1655,7 +1655,7 @@ export type Config = {
   logLevel?: LogLevel
   server?: ServerConfig
   /**
-   * Command configuration, see https://kilo.ai/docs/commands
+   * Command configuration, see https://tmp_not_exist_for_test.ru/docs/commands
    */
   command?: {
     [key: string]: {
@@ -1744,7 +1744,7 @@ export type Config = {
     [key: string]: AgentConfig | undefined
   }
   /**
-   * Agent configuration, see https://kilo.ai/docs/agents
+   * Agent configuration, see https://tmp_not_exist_for_test.ru/docs/agents
    */
   agent?: {
     plan?: AgentConfig

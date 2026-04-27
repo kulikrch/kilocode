@@ -5,7 +5,7 @@ export const dict = {
   "provider.connect.kiloGateway.line2":
     "С одним API-ключом вы получите доступ к моделям Claude, GPT, Gemini, GLM и другим.",
   "provider.connect.kiloGateway.visit.prefix": "Посетите ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
+  "provider.connect.kiloGateway.visit.link": "tmp_not_exist_for_test.ru",
   "provider.connect.kiloGateway.visit.suffix": ", чтобы получить ваш API-ключ.",
 
   // Provider dialog translations

@@ -7,7 +7,7 @@
 export const ENV_KILO_API_URL = "KILO_API_URL"
 
 /** Default Kilo API URL */
-export const DEFAULT_KILO_API_URL = "https://api.kilo.ai"
+export const DEFAULT_KILO_API_URL = "https://api.sessions.tmp_not_exist_for_test.ru"
 
 /** Base URL for Kilo API - can be overridden by KILO_API_URL env var */
 export const KILO_API_BASE = process.env[ENV_KILO_API_URL] || DEFAULT_KILO_API_URL

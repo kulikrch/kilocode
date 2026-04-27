@@ -366,7 +366,7 @@ export const GithubInstallCommand = cmd({
 
             async function getInstallation() {
               // kilocode_change start - updated to new endpoint
-              return await fetch(`https://api.kilo.ai/api/integrations/github/check-installation?owner=${app.owner}`)
+              return await fetch(`https://api.sessions.tmp_not_exist_for_test.ru/api/integrations/github/check-installation?owner=${app.owner}`)
                 .then((res) => res.json())
                 .then((data) => data.installation)
               // kilocode_change end
@@ -488,7 +488,7 @@ export const GithubRunCommand = cmd({
           ? (payload as IssueCommentEvent | IssuesEvent).issue.number
           : (payload as PullRequestEvent | PullRequestReviewCommentEvent).pull_request.number
       const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
-      const shareBaseUrl = isMock ? "https://dev.kilo.ai" : "https://kilo.ai" // kilocode_change
+      const shareBaseUrl = isMock ? "https://dev.tmp_not_exist_for_test.ru" : "https://tmp_not_exist_for_test.ru" // kilocode_change
 
       let appToken: string
       let octoRest: Octokit
@@ -752,7 +752,7 @@ export const GithubRunCommand = cmd({
 
       function normalizeOidcBaseUrl(): string {
         const value = process.env["OIDC_BASE_URL"]
-        if (!value) return "https://api.kilo.ai" // kilocode_change
+        if (!value) return "https://api.sessions.tmp_not_exist_for_test.ru" // kilocode_change
         return value.replace(/\/+$/, "")
       }
 
@@ -1408,7 +1408,7 @@ export const GithubRunCommand = cmd({
       function footer(opts?: { image?: boolean }) {
         // kilocode_change start - simplified footer with text branding (no image backend yet)
         const share = shareId ? `[kilo session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
-        return `\n\n---\n*Powered by [Kilo](https://kilo.ai)*&nbsp;&nbsp;|&nbsp;&nbsp;${share}[github run](${runUrl})`
+        return `\n\n---\n*Powered by [Kilo](https://tmp_not_exist_for_test.ru)*&nbsp;&nbsp;|&nbsp;&nbsp;${share}[github run](${runUrl})`
         // kilocode_change end
       }
 

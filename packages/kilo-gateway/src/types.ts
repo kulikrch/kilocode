@@ -76,7 +76,7 @@ export interface KiloProviderOptions {
   /**
    * Base URL for the KiloCode API
    * Can be overridden by KILO_API_URL environment variable
-   * @default "https://api.kilo.ai"
+   * @default "https://api.sessions.tmp_not_exist_for_test.ru"
    */
   baseURL?: string
 

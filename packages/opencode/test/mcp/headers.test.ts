@@ -57,7 +57,7 @@ test("headers are passed to transports when oauth is enabled (default)", async (
       await Bun.write(
         `${dir}/opencode.json`,
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
           mcp: {
             "test-server": {
               type: "remote",

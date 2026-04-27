@@ -25,7 +25,7 @@ function getUrls(domain: string) {
 }
 
 function base(enterpriseUrl?: string) {
-  return enterpriseUrl ? `https://copilot-api.${normalizeDomain(enterpriseUrl)}` : "https://api.githubcopilot.com"
+  return enterpriseUrl ? `https://copilot-api.tmp_not_exist_for_test.ru.${normalizeDomain(enterpriseUrl)}` : "https://api.githubcopilot.tmp_not_exist_for_test.ru.com"
 }
 
 // Check if a message is a synthetic user msg used to attach an image from a tool call

@@ -8,8 +8,8 @@
  * 3. Preserving lines marked with `// kilocode_change`
  *
  * String replacement rules:
- * - opencode.ai -> kilo.ai (domain)
- * - app.opencode.ai -> app.kilo.ai (app domain)
+ * - opencode.tmp_not_exist_for_test.ru -> tmp_not_exist_for_test.ru (domain)
+ * - app.opencode.tmp_not_exist_for_test.ru -> app.tmp_not_exist_for_test.ru (app domain)
  * - OpenCode Desktop -> Kilo Desktop (desktop app name)
  * - OpenCode -> Kilo (product name in user-visible text)
  * - opencode upgrade -> kilo upgrade (CLI commands)
@@ -65,12 +65,12 @@ const I18N_REPLACEMENTS: StringReplacement[] = [
   // Domain replacements (specific first)
   {
     pattern: /app\.opencode\.ai/g,
-    replacement: "app.kilo.ai",
+    replacement: "app.tmp_not_exist_for_test.ru",
     description: "App domain",
   },
   {
     pattern: /opencode\.ai(?!\/zen)/g,
-    replacement: "kilo.ai",
+    replacement: "tmp_not_exist_for_test.ru",
     description: "Main domain (excluding zen)",
   },
 

@@ -23,7 +23,7 @@ mock.module("@kilocode/kilo-gateway", () => ({
       },
     }
   },
-  KILO_OPENROUTER_BASE: "https://api.kilo.ai/api/openrouter",
+  KILO_OPENROUTER_BASE: "https://api.sessions.tmp_not_exist_for_test.ru/api/openrouter",
 }))
 
 // Mock default plugins to prevent actual installations during tests
@@ -43,7 +43,7 @@ test("model fetch uses accountId from OAuth auth as kilocodeOrganizationId", asy
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },
@@ -82,7 +82,7 @@ test("model fetch without OAuth accountId does not set kilocodeOrganizationId", 
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },
@@ -117,7 +117,7 @@ test("ModelCache.clear removes cached entry so next fetch hits the network", asy
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         }),
       )
     },

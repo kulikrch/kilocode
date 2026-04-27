@@ -338,7 +338,7 @@ export class AutocompleteServiceManager {
     if (status === 402) {
       vscode.window.showWarningMessage(msg, t("kilocode:autocomplete.creditsExhausted.addCredits")).then((choice) => {
         if (choice === t("kilocode:autocomplete.creditsExhausted.addCredits")) {
-          vscode.env.openExternal(vscode.Uri.parse("https://app.kilo.ai/credits"))
+          vscode.env.openExternal(vscode.Uri.parse("https://app.tmp_not_exist_for_test.ru/credits"))
         }
       })
     } else {

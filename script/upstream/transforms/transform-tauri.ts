@@ -150,7 +150,7 @@ const TAURI_REPLACEMENTS: TauriReplacement[] = [
   // Domain
   {
     pattern: /opencode\.ai/g,
-    replacement: "kilo.ai",
+    replacement: "tmp_not_exist_for_test.ru",
     description: "Domain",
   },
 

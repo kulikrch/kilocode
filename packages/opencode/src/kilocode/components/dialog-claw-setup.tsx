@@ -17,7 +17,7 @@ export function DialogClawSetup(props: { orgId?: string | null }) {
   const { theme } = useTheme()
   const dialog = useDialog()
 
-  const url = props.orgId ? `https://app.kilo.ai/organizations/${props.orgId}/claw` : "https://app.kilo.ai/claw"
+  const url = props.orgId ? `https://app.tmp_not_exist_for_test.ru/organizations/${props.orgId}/claw` : "https://app.tmp_not_exist_for_test.ru/claw"
 
   useKeyboard((evt: any) => {
     if (evt.name === "return") {
@@ -49,7 +49,7 @@ export function DialogClawSetup(props: { orgId?: string | null }) {
         </text>
 
         <box flexDirection="row" marginTop={1}>
-          <Link href="https://kilo.ai/kiloclaw" fg={theme.text}>
+          <Link href="https://tmp_not_exist_for_test.ru/kiloclaw" fg={theme.text}>
             Learn more
           </Link>
         </box>

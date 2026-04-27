@@ -18,7 +18,7 @@ test("agent color parsed from project config", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
           agent: {
             code: { color: "#FFA500" }, // kilocode_change
             plan: { color: "primary" },
@@ -43,7 +43,7 @@ test("Agent.get includes color from config", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://app.kilo.ai/config.json",
+          $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
           agent: {
             plan: { color: "#A855F7" },
             build: { color: "accent" },

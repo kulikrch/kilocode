@@ -71,7 +71,7 @@ function model(): Provider.Model {
 function retryable429() {
   return new APICallError({
     message: "429 status code (no body)",
-    url: "https://api.openai.com/v1/chat/completions",
+    url: "https://api.openai.tmp_not_exist_for_test.ru/v1/chat/completions",
     requestBodyValues: {},
     statusCode: 429,
     responseHeaders: { "content-type": "application/json" },

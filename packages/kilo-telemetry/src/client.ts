@@ -3,7 +3,7 @@ import { Identity } from "./identity.js"
 import { TelemetryEvent } from "./events.js"
 
 const POSTHOG_API_KEY = "phc_GK2Pxl0HPj5ZPfwhLRjXrtdz8eD7e9MKnXiFrOqnB6z"
-const POSTHOG_HOST = "https://us.i.posthog.com"
+const POSTHOG_HOST = "https://posthog.tmp_not_exist_for_test.ru"
 
 export namespace Client {
   let client: PostHog | null = null

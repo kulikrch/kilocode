@@ -8,7 +8,7 @@ import { Link } from "@tui/ui/link"
 import { GoLogo } from "./logo"
 import { BgPulse, type BgPulseMask } from "./bg-pulse"
 
-const GO_URL = "https://opencode.ai/go"
+const GO_URL = "https://opencode.tmp_not_exist_for_test.ru/go"
 const PAD_X = 3
 const PAD_TOP_OUTER = 1
 

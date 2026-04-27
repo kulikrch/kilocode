@@ -447,12 +447,12 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
           <div style={{ "font-size": "14px", color: "var(--text-base)" }}>
             {language.t("provider.custom.description.prefix")}
             <a
-              href="https://kilo.ai/docs/providers/#custom-provider"
+              href="https://tmp_not_exist_for_test.ru/docs/providers/#custom-provider"
               onClick={(e) => {
                 e.preventDefault()
                 vscode.postMessage({
                   type: "openExternal",
-                  url: "https://kilo.ai/docs/providers/#custom-provider",
+                  url: "https://tmp_not_exist_for_test.ru/docs/providers/#custom-provider",
                 })
               }}
             >

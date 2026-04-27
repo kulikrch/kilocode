@@ -133,7 +133,7 @@ export function ClawSidebar(props: {
           <Show when={!props.loading && !props.error && !props.status}>
             <box>
               <text fg={theme.textMuted}>No instance found.</text>
-              <text fg={theme.textMuted}>Visit kilo.ai/claw</text>
+              <text fg={theme.textMuted}>Visit tmp_not_exist_for_test.ru/claw</text>
               <text fg={theme.textMuted}>to set one up.</text>
             </box>
           </Show>

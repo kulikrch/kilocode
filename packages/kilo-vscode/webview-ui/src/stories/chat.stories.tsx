@@ -654,7 +654,7 @@ const MOCK_NOTIFICATION = {
   id: "notif-1",
   title: "Try BYOK for Kilo Gateway",
   message: "Bring your own API key for even more flexibility with Kilo Gateway models.",
-  action: { actionText: "Learn more", actionURL: "https://kilo.ai/docs" },
+  action: { actionText: "Learn more", actionURL: "https://tmp_not_exist_for_test.ru/docs" },
 }
 
 /** Mock server context with profile data so AccountSwitcher is visible */

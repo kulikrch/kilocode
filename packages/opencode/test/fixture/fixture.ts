@@ -58,7 +58,7 @@ export async function tmpdir<T>(options?: TmpDirOptions<T>) {
     await Bun.write(
       path.join(dirpath, "opencode.json"),
       JSON.stringify({
-        $schema: "https://app.kilo.ai/config.json",
+        $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
         ...options.config,
       }),
     )
@@ -111,7 +111,7 @@ export function tmpdirScoped(options?: { git?: boolean; config?: Partial<Config.
       yield* Effect.promise(() =>
         fs.writeFile(
           path.join(dir, "opencode.json"),
-          JSON.stringify({ $schema: "https://opencode.ai/config.json", ...options.config }),
+          JSON.stringify({ $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json", ...options.config }),
         ),
       )
     }

@@ -108,7 +108,7 @@ export namespace KiloSessions {
       const valid = await authValid(token)
       if (!valid) return undefined
 
-      const base = process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.kilosessions.ai"
+      const base = process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.sessions.tmp_not_exist_for_test.ru"
       const baseHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -314,7 +314,7 @@ export namespace KiloSessions {
       }
       if (valid === undefined) throw new Error("Unable to enable remote: failed to verify Kilo credentials.")
 
-      const url = (process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.kilosessions.ai")
+      const url = (process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.sessions.tmp_not_exist_for_test.ru")
         .replace(/^https:\/\//, "wss://")
         .replace(/^http:\/\//, "ws://")
 
@@ -505,7 +505,7 @@ export namespace KiloSessions {
       throw new Error(`Unable to share session ${sessionId}: server did not return a public id`)
     }
 
-    const url = `https://app.kilo.ai/s/${result.public_id}`
+    const url = `https://app.tmp_not_exist_for_test.ru/s/${result.public_id}`
 
     await Storage.write(["session_share", sessionId], {
       ...current,

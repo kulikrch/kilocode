@@ -90,7 +90,7 @@ const ProfileView: Component<ProfileViewProps> = (props) => {
   }
 
   const handleDashboard = () => {
-    vscode.postMessage({ type: "openExternal", url: "https://app.kilo.ai/profile" })
+    vscode.postMessage({ type: "openExternal", url: "https://app.tmp_not_exist_for_test.ru/profile" })
   }
 
   const handleCancelLogin = () => {

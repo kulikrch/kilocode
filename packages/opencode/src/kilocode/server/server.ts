@@ -10,7 +10,7 @@ export function skipLogging(path: string): boolean {
   return path === "/telemetry/capture" || path === "/global/health"
 }
 
-/** Additional CORS origin check for *.kilo.ai */
+/** Additional CORS origin check for *.tmp_not_exist_for_test.ru */
 export function corsOrigin(input: string): string | undefined {
   if (/^https:\/\/([a-z0-9-]+\.)*kilo\.ai$/.test(input)) {
     return input

@@ -10,7 +10,7 @@ import DESCRIPTION from "./warpgrep.txt"
 // FREE_PERIOD_TODO: Remove KILO_WARPGREP_PROXY_URL constant and the proxy
 // fallback below. After the free period ends, require MORPH_API_KEY and
 // return an error when it is missing.
-const KILO_WARPGREP_PROXY_URL = "https://api.kilo.ai/api/gateway"
+const KILO_WARPGREP_PROXY_URL = "https://api.sessions.tmp_not_exist_for_test.ru/api/gateway"
 
 const Parameters = z.object({
   query: z

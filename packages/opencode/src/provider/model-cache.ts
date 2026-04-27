@@ -175,7 +175,7 @@ export namespace ModelCache {
   }
 
   // kilocode_change start
-  const APERTIS_BASE_URL = "https://api.apertis.ai/v1"
+  const APERTIS_BASE_URL = "https://api.apertis.tmp_not_exist_for_test.ru/v1"
 
   async function fetchApertisModels(options: any): Promise<Record<string, any>> {
     const baseURL = options.baseURL ?? APERTIS_BASE_URL

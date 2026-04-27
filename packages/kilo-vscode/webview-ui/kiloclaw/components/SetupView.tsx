@@ -19,10 +19,10 @@ export function SetupView() {
           <p class="kiloclaw-card-text">{t("kiloClaw.setup.description2")}</p>
         </CardDescription>
         <CardActions>
-          <Button variant="ghost" onClick={() => claw.openExternal("https://kilo.ai/kiloclaw")}>
+          <Button variant="ghost" onClick={() => claw.openExternal("https://tmp_not_exist_for_test.ru/kiloclaw")}>
             {t("kiloClaw.setup.learnMore")}
           </Button>
-          <Button variant="primary" onClick={() => claw.openExternal("https://app.kilo.ai/claw")}>
+          <Button variant="primary" onClick={() => claw.openExternal("https://app.tmp_not_exist_for_test.ru/claw")}>
             {t("kiloClaw.setup.tryKiloClaw")}
           </Button>
         </CardActions>

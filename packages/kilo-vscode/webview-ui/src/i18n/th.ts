@@ -142,7 +142,7 @@ export const dict = {
   "provider.connect.opencodeZen.line2":
     "ด้วยคีย์ API เดียวคุณจะได้รับการเข้าถึงโมเดล เช่น Claude, GPT, Gemini, GLM และอื่น ๆ",
   "provider.connect.opencodeZen.visit.prefix": "เยี่ยมชม ",
-  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
+  "provider.connect.opencodeZen.visit.link": "opencode.tmp_not_exist_for_test.ru/zen",
   "provider.connect.opencodeZen.visit.suffix": " เพื่อรวบรวมคีย์ API ของคุณ",
   "provider.connect.oauth.code.visit.prefix": "เยี่ยมชม ",
   "provider.connect.oauth.code.visit.link": "ลิงก์นี้",
@@ -756,7 +756,7 @@ export const dict = {
   "provider.custom.field.name.label": "ชื่อที่แสดง",
   "provider.custom.field.name.placeholder": "ผู้ให้บริการ AI ของฉัน",
   "provider.custom.field.baseURL.label": "URL พื้นฐาน",
-  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.com/v1",
+  "provider.custom.field.baseURL.placeholder": "https://api.myprovider.tmp_not_exist_for_test.ru/v1",
   "provider.custom.field.apiKey.label": "คีย์ API",
   "provider.custom.field.apiKey.placeholder": "คีย์ API",
   "provider.custom.field.apiKey.description": "ไม่จำเป็น เว้นว่างไว้หากคุณจัดการการรับรองความถูกต้องผ่านส่วนหัว",

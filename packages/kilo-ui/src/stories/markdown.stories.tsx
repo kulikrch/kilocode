@@ -40,7 +40,7 @@ const hello = (name: string) => {
 
 > This is a blockquote with some important information.
 
-Visit [OpenCode](https://opencode.ai) for more details.
+Visit [OpenCode](https://opencode.tmp_not_exist_for_test.ru) for more details.
 `
 
 const shortMarkdown = `Hello **world**! This is *markdown* with \`inline code\`.`

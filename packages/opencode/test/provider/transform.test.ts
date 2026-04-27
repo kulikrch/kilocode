@@ -75,7 +75,7 @@ describe("ProviderTransform.options - setCacheKey", () => {
       providerID: "openai",
       api: {
         id: "gpt-4",
-        url: "https://api.openai.com",
+        url: "https://api.openai.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai",
       },
     }
@@ -89,7 +89,7 @@ describe("ProviderTransform.options - setCacheKey", () => {
       providerID: "openai",
       api: {
         id: "gpt-4",
-        url: "https://api.openai.com",
+        url: "https://api.openai.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai",
       },
     }
@@ -247,7 +247,7 @@ describe("ProviderTransform.options - gpt-5 textVerbosity", () => {
       providerID: "openai",
       api: {
         id: apiId,
-        url: "https://api.openai.com",
+        url: "https://api.openai.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai",
       },
       name: apiId,
@@ -941,7 +941,7 @@ describe("ProviderTransform.message - DeepSeek reasoning content", () => {
         providerID: ProviderID.make("openai"),
         api: {
           id: "gpt-4",
-          url: "https://api.openai.com",
+          url: "https://api.openai.tmp_not_exist_for_test.ru",
           npm: "@ai-sdk/openai",
         },
         name: "GPT-4",
@@ -1268,7 +1268,7 @@ describe("ProviderTransform.message - anthropic empty content filtering", () => 
       providerID: "openai",
       api: {
         id: "gpt-4",
-        url: "https://api.openai.com",
+        url: "https://api.openai.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai",
       },
     }
@@ -1399,7 +1399,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
     providerID: "openai",
     api: {
       id: "gpt-5",
-      url: "https://api.openai.com",
+      url: "https://api.openai.tmp_not_exist_for_test.ru",
       npm: "@ai-sdk/openai",
     },
     name: "GPT-5",
@@ -1581,7 +1581,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -1615,7 +1615,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.tmp_not_exist_for_test.ru",
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -2135,7 +2135,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "test-model",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2149,7 +2149,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "gpt-4",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2165,7 +2165,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "gemini-3-5-pro",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2180,7 +2180,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "inception/mercury-2",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2197,7 +2197,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "grok-4",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2211,7 +2211,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openrouter",
         api: {
           id: "grok-3-mini",
-          url: "https://openrouter.ai",
+          url: "https://openrouter.tmp_not_exist_for_test.ru",
           npm: "@openrouter/ai-sdk-provider",
         },
       })
@@ -2231,7 +2231,7 @@ describe("ProviderTransform.variants", () => {
         capabilities: { reasoning: false },
         api: {
           id: "anthropic/claude-sonnet-4",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2246,7 +2246,7 @@ describe("ProviderTransform.variants", () => {
         capabilities: { reasoning: false },
         api: {
           id: "anthropic/claude-opus-4",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2260,7 +2260,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "openai/gpt-5",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2275,7 +2275,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "google/gemini-3-pro",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2289,7 +2289,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "meta/llama-4",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2303,7 +2303,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "x-ai/grok-3-mini",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2319,7 +2319,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "openai/gpt-5.2-codex",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
       })
@@ -2342,7 +2342,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "kilo",
         api: {
           id: "inception/mercury-2",
-          url: "https://gateway.kilo.ai",
+          url: "https://gateway.tmp_not_exist_for_test.ru",
           npm: "@kilocode/kilo-gateway",
         },
         variants: serverVariants,
@@ -2506,7 +2506,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-4.5",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2525,7 +2525,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.1-codex-max",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2539,7 +2539,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.1-codex-mini",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2553,7 +2553,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.1-codex",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2567,7 +2567,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.2",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2586,7 +2586,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.2-codex",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2600,7 +2600,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.3-codex",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2615,7 +2615,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "github-copilot",
         api: {
           id: "gpt-5.4",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/github-copilot",
         },
       })
@@ -2826,7 +2826,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openai",
         api: {
           id: "gpt-5-pro",
-          url: "https://api.openai.com",
+          url: "https://api.openai.tmp_not_exist_for_test.ru",
           npm: "@ai-sdk/openai",
         },
       })
@@ -2840,7 +2840,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openai",
         api: {
           id: "gpt-5",
-          url: "https://api.openai.com",
+          url: "https://api.openai.tmp_not_exist_for_test.ru",
           npm: "@ai-sdk/openai",
         },
         release_date: "2024-06-01",
@@ -2860,7 +2860,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openai",
         api: {
           id: "gpt-5-nano",
-          url: "https://api.openai.com",
+          url: "https://api.openai.tmp_not_exist_for_test.ru",
           npm: "@ai-sdk/openai",
         },
         release_date: "2025-11-14",
@@ -2875,7 +2875,7 @@ describe("ProviderTransform.variants", () => {
         providerID: "openai",
         api: {
           id: "gpt-5-chat",
-          url: "https://api.openai.com",
+          url: "https://api.openai.tmp_not_exist_for_test.ru",
           npm: "@ai-sdk/openai",
         },
         release_date: "2025-12-05",
@@ -3318,7 +3318,7 @@ describe("ProviderTransform.variants", () => {
           providerID: "kilo",
           api: {
             id: "anthropic/claude-sonnet-4",
-            url: "https://gateway.kilo.ai",
+            url: "https://gateway.tmp_not_exist_for_test.ru",
             npm: "@kilocode/kilo-gateway",
           },
         })
@@ -3332,7 +3332,7 @@ describe("ProviderTransform.variants", () => {
           providerID: "kilo",
           api: {
             id: "openai/gpt-4",
-            url: "https://gateway.kilo.ai",
+            url: "https://gateway.tmp_not_exist_for_test.ru",
             npm: "@kilocode/kilo-gateway",
           },
         })
@@ -3346,7 +3346,7 @@ describe("ProviderTransform.variants", () => {
           providerID: "kilo",
           api: {
             id: "google/gemini-2.0-flash",
-            url: "https://gateway.kilo.ai",
+            url: "https://gateway.tmp_not_exist_for_test.ru",
             npm: "@kilocode/kilo-gateway",
           },
         })

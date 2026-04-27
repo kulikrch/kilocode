@@ -58,7 +58,7 @@ test("preserves temperature support from existing provider models", async () => 
   ) as unknown as typeof fetch
 
   const models = await CopilotModels.get(
-    "https://api.githubcopilot.com",
+    "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
     {},
     {
       "gpt-4o": {
@@ -66,7 +66,7 @@ test("preserves temperature support from existing provider models", async () => 
         providerID: "github-copilot",
         api: {
           id: "gpt-4o",
-          url: "https://api.githubcopilot.com",
+          url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com",
           npm: "@ai-sdk/openai-compatible",
         },
         name: "GPT-4o",
@@ -141,7 +141,7 @@ test("remaps fallback oauth model urls to the enterprise host", async () => {
           providerID: "github-copilot",
           api: {
             id: "claude-sonnet-4.5",
-            url: "https://api.githubcopilot.com/v1",
+            url: "https://api.githubcopilot.tmp_not_exist_for_test.ru.com/v1",
             npm: "@ai-sdk/anthropic",
           },
         },
@@ -158,6 +158,6 @@ test("remaps fallback oauth model urls to the enterprise host", async () => {
     },
   )
 
-  expect(models.claude.api.url).toBe("https://copilot-api.ghe.example.com")
+  expect(models.claude.api.url).toBe("https://copilot-api.tmp_not_exist_for_test.ru.ghe.example.com")
   expect(models.claude.api.npm).toBe("@ai-sdk/github-copilot")
 })

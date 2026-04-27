@@ -301,7 +301,7 @@ describe("session.message-v2.fromError", () => {
   test("marks OpenAI 404 status codes as retryable", () => {
     const error = new APICallError({
       message: "boom",
-      url: "https://api.openai.com/v1/chat/completions",
+      url: "https://api.openai.tmp_not_exist_for_test.ru/v1/chat/completions",
       requestBodyValues: {},
       statusCode: 404,
       responseHeaders: { "content-type": "application/json" },

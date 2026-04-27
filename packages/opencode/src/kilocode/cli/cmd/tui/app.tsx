@@ -34,7 +34,7 @@ export { KiloClawView } from "@/kilocode/claw/view"
 export const APP_TITLE = "Kilo CLI"
 
 /** Public docs URL shown in the command palette. */
-export const DOCS_URL = "https://kilo.ai/docs"
+export const DOCS_URL = "https://tmp_not_exist_for_test.ru/docs"
 
 /** Human-readable product name used in user-facing messages. */
 export const APP_NAME = "Kilo"

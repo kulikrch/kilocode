@@ -36,7 +36,7 @@ export const GenerateCommand = {
       .replaceAll("OpenCode", "Kilo")
       .replaceAll("opencode.local", "kilo.local")
       .replaceAll("opencode serve", "kilo serve")
-      .replaceAll("https://opencode.ai/", "https://kilo.ai/")
+      .replaceAll("https://opencode.tmp_not_exist_for_test.ru/", "https://tmp_not_exist_for_test.ru/")
     // kilocode_change end
 
     // Format through prettier so output is byte-identical to committed file

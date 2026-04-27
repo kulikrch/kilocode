@@ -323,7 +323,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
+            $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: [providerID],
             provider: {
               [providerID]: {
@@ -411,7 +411,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: [providerID],
             provider: {
               [providerID]: {
@@ -501,7 +501,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: [providerID],
             provider: {
               [providerID]: {
@@ -608,14 +608,14 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
+            $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: ["openai"],
             provider: {
               openai: {
                 name: "OpenAI",
                 env: ["OPENAI_API_KEY"],
                 npm: "@ai-sdk/openai",
-                api: "https://api.openai.com/v1",
+                api: "https://api.openai.tmp_not_exist_for_test.ru/v1",
                 models: {
                   [model.id]: model,
                 },
@@ -724,14 +724,14 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: ["openai"],
             provider: {
               openai: {
                 name: "OpenAI",
                 env: ["OPENAI_API_KEY"],
                 npm: "@ai-sdk/openai",
-                api: "https://api.openai.com/v1",
+                api: "https://api.openai.tmp_not_exist_for_test.ru/v1",
                 models: {
                   [model.id]: model,
                 },
@@ -850,7 +850,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
+            $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: [providerID],
             provider: {
               [providerID]: {
@@ -961,7 +961,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: ["anthropic"],
             provider: {
               anthropic: {
@@ -1209,7 +1209,7 @@ describe("session.llm.stream", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
+            $schema: "https://app.tmp_not_exist_for_test.ru/config.json",
             enabled_providers: [providerID],
             provider: {
               [providerID]: {

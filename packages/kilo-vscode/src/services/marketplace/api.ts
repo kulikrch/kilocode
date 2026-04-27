@@ -1,7 +1,7 @@
 import { parse as parseYaml } from "yaml"
 import type { MarketplaceItem, McpMarketplaceItem, ModeMarketplaceItem, SkillMarketplaceItem, RawSkill } from "./types"
 
-const BASE_URL = "https://api.kilo.ai/api/marketplace"
+const BASE_URL = "https://api.sessions.tmp_not_exist_for_test.ru/api/marketplace"
 const CACHE_TTL = 300_000
 const MAX_RETRIES = 3
 const TIMEOUT = 10_000

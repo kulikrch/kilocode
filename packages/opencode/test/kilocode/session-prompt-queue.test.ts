@@ -328,7 +328,7 @@ describe("session prompt queue", () => {
           await Bun.write(
             path.join(dir, "opencode.json"),
             JSON.stringify({
-              $schema: "https://opencode.ai/config.json",
+              $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
               enabled_providers: ["alibaba"],
               provider: {
                 alibaba: {
@@ -440,7 +440,7 @@ describe("session prompt queue", () => {
           await Bun.write(
             path.join(dir, "opencode.json"),
             JSON.stringify({
-              $schema: "https://opencode.ai/config.json",
+              $schema: "https://opencode.tmp_not_exist_for_test.ru/config.json",
               enabled_providers: ["alibaba"],
               provider: {
                 alibaba: {

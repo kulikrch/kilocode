@@ -52,12 +52,12 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
   // Domain replacements (specific first)
   {
     pattern: /app\.opencode\.ai/g,
-    replacement: "app.kilo.ai",
+    replacement: "app.tmp_not_exist_for_test.ru",
     description: "App domain",
   },
   {
     pattern: /opencode\.ai(?!\/zen)/g,
-    replacement: "kilo.ai",
+    replacement: "tmp_not_exist_for_test.ru",
     description: "Main domain (excluding zen)",
   },
 
