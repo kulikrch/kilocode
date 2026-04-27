@@ -10,11 +10,15 @@ if (!expectedBunVersion) {
   throw new Error("packageManager field not found in root package.json")
 }
 
-// relax version requirement
-const expectedBunVersionRange = `^${expectedBunVersion}`
+// kilocode_change start - allow local runs on older Bun in fork workflows
+const minBunVersion = "1.3.8"
+const expectedBunVersionRange = `>=${minBunVersion} <2`
+// kilocode_change end
 
 if (!semver.satisfies(process.versions.bun, expectedBunVersionRange)) {
-  throw new Error(`This script requires bun@${expectedBunVersionRange}, but you are using bun@${process.versions.bun}`)
+  throw new Error(
+    `This script requires bun@${expectedBunVersionRange} (repo default: ${expectedBunVersion}), but you are using bun@${process.versions.bun}`,
+  )
 }
 // kilocode_change start
 const env = {
