@@ -975,6 +975,8 @@ export const dict = {
   "settings.checkpoints.title": "Kontrolne tačke",
   "settings.display.title": "Prikaz",
   "settings.autocomplete.title": "Automatsko dovršavanje",
+  "settings.autocomplete.model.title": "Model za automatsko dovršavanje",
+  "settings.autocomplete.model.description": "Odaberite model koji se koristi za inline dovršavanje koda",
   "settings.notifications.title": "Obavještenja",
   "settings.context.title": "Kontekst",
 

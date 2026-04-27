@@ -964,6 +964,8 @@ export const dict = {
   "settings.checkpoints.title": "จุดตรวจสอบ",
   "settings.display.title": "การแสดงผล",
   "settings.autocomplete.title": "เติมข้อความอัตโนมัติ",
+  "settings.autocomplete.model.title": "โมเดล Autocomplete",
+  "settings.autocomplete.model.description": "เลือกโมเดลที่ใช้สำหรับการเติมโค้ดแบบอินไลน์ (inline completions)",
   "settings.notifications.title": "การแจ้งเตือน",
   "settings.context.title": "บริบท",
 

@@ -969,6 +969,8 @@ export const dict = {
   "settings.checkpoints.title": "Controlepunten",
   "settings.display.title": "Weergave",
   "settings.autocomplete.title": "Automatisch Aanvullen",
+  "settings.autocomplete.model.title": "Autocomplete-model",
+  "settings.autocomplete.model.description": "Selecteer het model dat wordt gebruikt voor inline code-aanvullingen",
   "settings.notifications.title": "Meldingen",
   "settings.context.title": "Context",
 

@@ -972,6 +972,8 @@ export const dict = {
   "settings.checkpoints.title": "Kontrollpunkter",
   "settings.display.title": "Visning",
   "settings.autocomplete.title": "Autofullfør",
+  "settings.autocomplete.model.title": "Autocomplete-modell",
+  "settings.autocomplete.model.description": "Velg modellen som brukes for inline kodefullføring",
   "settings.notifications.title": "Varslinger",
   "settings.context.title": "Kontekst",
 

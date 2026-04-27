@@ -968,6 +968,8 @@ export const dict = {
   "settings.checkpoints.title": "Kontrolpunkter",
   "settings.display.title": "Visning",
   "settings.autocomplete.title": "Autofuldførelse",
+  "settings.autocomplete.model.title": "Autocomplete-model",
+  "settings.autocomplete.model.description": "Vælg den model, der bruges til inline kodefuldførelse",
   "settings.notifications.title": "Notifikationer",
   "settings.context.title": "Kontekst",
 

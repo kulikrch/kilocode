@@ -982,6 +982,8 @@ export const dict = {
   "settings.checkpoints.title": "Points de contrôle",
   "settings.display.title": "Affichage",
   "settings.autocomplete.title": "Autocomplétion",
+  "settings.autocomplete.model.title": "Modèle d'autocomplétion",
+  "settings.autocomplete.model.description": "Sélectionnez le modèle utilisé pour les complétions de code en ligne",
   "settings.notifications.title": "Notifications",
   "settings.context.title": "Contexte",
 

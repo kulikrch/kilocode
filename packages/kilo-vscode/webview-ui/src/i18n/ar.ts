@@ -961,6 +961,8 @@ export const dict = {
   "settings.checkpoints.title": "نقاط التحقق",
   "settings.display.title": "العرض",
   "settings.autocomplete.title": "الإكمال التلقائي",
+  "settings.autocomplete.model.title": "نموذج الإكمال التلقائي",
+  "settings.autocomplete.model.description": "حدد النموذج المستخدم لإكمال الكود المضمن (inline completions)",
   "settings.notifications.title": "الإشعارات",
   "settings.context.title": "السياق",
 

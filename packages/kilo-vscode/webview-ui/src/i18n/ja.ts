@@ -966,6 +966,8 @@ export const dict = {
   "settings.checkpoints.title": "チェックポイント",
   "settings.display.title": "表示",
   "settings.autocomplete.title": "オートコンプリート",
+  "settings.autocomplete.model.title": "オートコンプリートモデル",
+  "settings.autocomplete.model.description": "インラインでのコード補完に使用するモデルを選択します",
   "settings.notifications.title": "通知",
   "settings.context.title": "コンテキスト",
 

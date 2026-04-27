@@ -971,6 +971,8 @@ export const dict = {
   "settings.checkpoints.title": "Kontrol Noktaları",
   "settings.display.title": "Görünüm",
   "settings.autocomplete.title": "Otomatik Tamamlama",
+  "settings.autocomplete.model.title": "Otomatik tamamlama modeli",
+  "settings.autocomplete.model.description": "Satır içi (inline) kod tamamlamaları için kullanılacak modeli seçin",
   "settings.notifications.title": "Bildirimler",
   "settings.context.title": "Bağlam",
 

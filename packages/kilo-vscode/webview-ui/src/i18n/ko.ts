@@ -965,6 +965,8 @@ export const dict = {
   "settings.checkpoints.title": "체크포인트",
   "settings.display.title": "디스플레이",
   "settings.autocomplete.title": "자동 완성",
+  "settings.autocomplete.model.title": "자동 완성 모델",
+  "settings.autocomplete.model.description": "인라인 코드 완성에 사용되는 모델 선택",
   "settings.notifications.title": "알림",
   "settings.context.title": "컨텍스트",
 

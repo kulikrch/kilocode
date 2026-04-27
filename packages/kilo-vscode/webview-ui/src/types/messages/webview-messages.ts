@@ -270,8 +270,8 @@ export interface RequestAutocompleteSettingsMessage {
 
 export interface UpdateAutocompleteSettingMessage {
   type: "updateAutocompleteSetting"
-  key: "enableAutoTrigger" | "enableSmartInlineTaskKeybinding" | "enableChatAutocomplete"
-  value: boolean
+  key: "enableAutoTrigger" | "enableSmartInlineTaskKeybinding" | "enableChatAutocomplete" | "model"
+  value: boolean | string
 }
 
 export interface RequestChatCompletionMessage {

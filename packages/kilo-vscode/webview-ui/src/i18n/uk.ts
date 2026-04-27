@@ -972,6 +972,8 @@ export const dict = {
   "settings.checkpoints.title": "Контрольні точки",
   "settings.display.title": "Відображення",
   "settings.autocomplete.title": "Автодоповнення",
+  "settings.autocomplete.model.title": "Модель автодоповнення",
+  "settings.autocomplete.model.description": "Виберіть модель для вбудованого (inline) автодоповнення коду",
   "settings.notifications.title": "Сповіщення",
   "settings.context.title": "Контекст",
 

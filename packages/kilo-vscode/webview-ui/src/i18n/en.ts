@@ -1072,6 +1072,8 @@ export const dict = {
   "common.add": "Add",
   "common.choose": "Choose…",
 
+  "settings.autocomplete.model.title": "Autocomplete model",
+  "settings.autocomplete.model.description": "Select the model used for inline code completions",
   "settings.autocomplete.autoTrigger.title": "Enable automatic inline completions",
   "settings.autocomplete.autoTrigger.description": "Automatically show inline completion suggestions as you type",
   "settings.autocomplete.smartKeybinding.title": "Enable smart inline task keybinding",

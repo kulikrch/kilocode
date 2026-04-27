@@ -954,6 +954,8 @@ export const dict = {
   "settings.checkpoints.title": "检查点",
   "settings.display.title": "显示",
   "settings.autocomplete.title": "自动补全",
+  "settings.autocomplete.model.title": "自动补全模型",
+  "settings.autocomplete.model.description": "选择用于内联代码补全的模型",
   "settings.notifications.title": "通知",
   "settings.context.title": "上下文",
 
