@@ -37,7 +37,7 @@ export function resolveModelSelection(input: {
     validate(input.providers, input.connected, input.mode) ??
     validate(input.providers, input.connected, input.global) ??
     recent(input.providers, input.connected, input.recent) ??
-    input.fallback ??
+    validate(input.providers, input.connected, input.fallback) ??
     null
   )
 }

@@ -1701,6 +1701,19 @@ const layer: Layer.Layer<
         return { providerID: entry.providerID, modelID: entry.modelID }
       }
 
+      // kilocode_change start - prefer tmpcustomprovider as default when available
+      const preferred = s.providers[ProviderID.make("tmpcustomprovider")]
+      if (preferred && (!cfg.provider || Object.keys(cfg.provider).includes("tmpcustomprovider"))) {
+        const [model] = sort(Object.values(preferred.models))
+        if (model) {
+          return {
+            providerID: preferred.id,
+            modelID: model.id,
+          }
+        }
+      }
+      // kilocode_change end
+
       const provider = Object.values(s.providers).find((p) => !cfg.provider || Object.keys(cfg.provider).includes(p.id))
       if (!provider) throw new Error("no providers found")
       const [model] = sort(Object.values(provider.models))

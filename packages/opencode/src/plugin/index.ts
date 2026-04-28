@@ -26,6 +26,7 @@ import { parsePluginSpecifier, readPluginId, readV1Plugin, resolvePluginId } fro
 import { registerAdaptor } from "@/control-plane/adaptors"
 import type { WorkspaceAdaptor } from "@/control-plane/types"
 import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { TmpCustomProviderAuthPlugin } from "@/kilocode/plugin/tmpcustomprovider-auth" // kilocode_change
 
 const log = Log.create({ service: "plugin" })
 
@@ -57,6 +58,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Pl
 // Built-in plugins that are directly imported (not installed from npm)
 // kilocode_change start
 const INTERNAL_PLUGINS: PluginInstance[] = [
+  TmpCustomProviderAuthPlugin, // kilocode_change
   KiloAuthPlugin,
   CodexAuthPlugin,
   CopilotAuthPlugin,

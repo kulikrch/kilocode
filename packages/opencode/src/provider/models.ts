@@ -186,6 +186,7 @@ export async function get() {
   const result = await Data()
   // kilocode_change start
   const providers = result as Record<string, Provider>
+  const tmpBaseURL = "https://api.tmpcustomprovider.tmp_not_exist_for_test.ru/v1"
 
   if (providers["kilo"]) {
     delete providers["kilo"]
@@ -199,11 +200,41 @@ export async function get() {
   const disabled = new Set(config.disabled_providers ?? [])
   const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null
   const kiloAllowed = (!enabled || enabled.has("kilo")) && !disabled.has("kilo")
+  const tmpAllowed = (!enabled || enabled.has("tmpcustomprovider")) && !disabled.has("tmpcustomprovider")
+  const kiloCfg = config.provider?.kilo?.options
+  const kiloAuth = await Auth.get("kilo")
 
-  if (kiloAllowed && !providers["kilo"]) {
-    const kiloOptions = config.provider?.kilo?.options
+  if (tmpAllowed && !providers["tmpcustomprovider"]) {
+    providers["tmpcustomprovider"] = {
+      id: "tmpcustomprovider",
+      name: "Tmp Custom Provider",
+      env: ["TMPCUSTOMPROVIDER_API_KEY"],
+      api: tmpBaseURL,
+      npm: "@ai-sdk/openai-compatible",
+      models: {
+        "tmpcustomprovider/default": {
+          id: "tmpcustomprovider/default",
+          name: "Tmp Custom Default",
+          family: "tmpcustomprovider",
+          release_date: "2026-01-01",
+          attachment: true,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          cost: { input: 0, output: 0 },
+          limit: { context: 128000, output: 8192 },
+          modalities: {
+            input: ["text", "image"],
+            output: ["text"],
+          },
+        },
+      },
+    }
+  }
+
+  if (kiloAllowed && !tmpAllowed && !providers["kilo"]) {
+    const kiloOptions = kiloCfg
     // resolve org ID from auth (OAuth accountId) not just config
-    const kiloAuth = await Auth.get("kilo")
     const kiloOrgId =
       kiloOptions?.kilocodeOrganizationId ?? (kiloAuth?.type === "oauth" ? kiloAuth.accountId : undefined)
     const normalizedBaseURL = normalizeKiloBaseURL(kiloOptions?.baseURL, kiloOrgId)

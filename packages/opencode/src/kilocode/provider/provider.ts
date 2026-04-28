@@ -157,6 +157,30 @@ export function kiloCustomLoaders(dep: CustomDep): Record<string, CustomLoader> 
       }
     }),
 
+    tmpcustomprovider: Effect.fnUntraced(function* (input: any) {
+      const env = yield* dep.env()
+      const cfg = yield* dep.config()
+      const auth = yield* dep.auth(input.id)
+      const key =
+        (auth?.type === "api" ? auth.key : undefined) ??
+        cfg.provider?.["tmpcustomprovider"]?.options?.apiKey ??
+        env["TMPCUSTOMPROVIDER_API_KEY"] ??
+        "anonymous"
+      const baseURL =
+        cfg.provider?.["tmpcustomprovider"]?.options?.baseURL ??
+        env["TMPCUSTOMPROVIDER_BASE_URL"] ??
+        "https://api.tmpcustomprovider.tmp_not_exist_for_test.ru/v1"
+
+      return {
+        autoload: Object.keys(input.models).length > 0,
+        options: {
+          apiKey: key,
+          baseURL,
+          includeUsage: true,
+        },
+      }
+    }),
+
     // Override opencode to prevent auto-connecting without credentials
     opencode: () =>
       Effect.succeed({

@@ -16,6 +16,7 @@ import { KiloAutoMethod } from "@/kilocode/components/dialog-kilo-auto-method"
 // ---------------------------------------------------------------------------
 
 export const PROVIDER_PRIORITY: Record<string, number> = {
+  tmpcustomprovider: -2,
   kilo: -1,
   anthropic: 0,
   "github-copilot": 1,
@@ -28,6 +29,7 @@ export const PROVIDER_PRIORITY: Record<string, number> = {
 // ---------------------------------------------------------------------------
 
 export const PROVIDER_DESCRIPTIONS: Record<string, string> = {
+  tmpcustomprovider: "(Default, API key)",
   kilo: "(Recommended)",
   anthropic: "(Claude Max or API key)",
   openai: "(ChatGPT Plus/Pro or API key)",
