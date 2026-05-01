@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Реализовать в новой сессии с чистым контекстом",
   "plan.followup.answer.continue": "Продолжить здесь",
   "plan.followup.answer.continue.description": "Реализовать план в этой сессии",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Снимок выполняется медленно",
+  "snapshot.slowRepo.question":
+    "Система снимков Kilo позволяет отменять и повторять каждое изменение файла, сделанное Kilo во время беседы. Ваша история git не затрагивается — снимки хранятся отдельно.\n\nПервоначальный снимок этого репозитория занимает больше времени, чем ожидалось. На очень больших кодовых базах это может значительно задерживать каждый ход.\n\nВы можете продолжать ждать или отключить снимки для этого проекта и полагаться только на git. Этот выбор сохраняется в `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "Продолжить со снимками",
+  "snapshot.slowRepo.answer.continue.description":
+    "Подождите, пока снимок не завершится. Последующие ходы выполняются быстро после создания первоначального снимка.",
+  "snapshot.slowRepo.answer.disable": "Отключить для этого проекта",
+  "snapshot.slowRepo.answer.disable.description":
+    "Выключите снимки Kilo для этого проекта. Вы потеряете отмену/повтор изменений Kilo, но git по-прежнему отслеживает всё.",
+
+  "ui.messagePart.openInDiffViewer": "Открыть в просмотрщике различий",
 }

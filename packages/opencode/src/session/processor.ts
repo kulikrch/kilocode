@@ -112,7 +112,12 @@ export const layer: Layer.Layer<
       // Pre-capture snapshot before the LLM stream starts. The AI SDK
       // may execute tools internally before emitting start-step events,
       // so capturing inside the event handler can be too late.
-      const initialSnapshot = yield* snapshot.track()
+      // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
+      const initialSnapshot = yield* snapshot.track({
+        sessionID: input.sessionID,
+        messageID: input.assistantMessage.id,
+      })
+      // kilocode_change end
       const ctx: ProcessorContext = {
         assistantMessage: input.assistantMessage,
         sessionID: input.sessionID,
@@ -384,7 +389,9 @@ export const layer: Layer.Layer<
 
           case "start-step":
             ctx.stepStart = performance.now() // kilocode_change
-            if (!ctx.snapshot) ctx.snapshot = yield* snapshot.track()
+            if (!ctx.snapshot)
+              // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
+              ctx.snapshot = yield* snapshot.track({ sessionID: ctx.sessionID, messageID: ctx.assistantMessage.id }) // kilocode_change end - pass sessionID + messageID
             yield* session.updatePart({
               id: PartID.ascending(),
               messageID: ctx.assistantMessage.id,
@@ -415,7 +422,12 @@ export const layer: Layer.Layer<
             yield* session.updatePart({
               id: PartID.ascending(),
               reason: value.finishReason,
-              snapshot: yield* snapshot.track(),
+              // kilocode_change start - pass sessionID + messageID
+              snapshot: yield* snapshot.track({
+                sessionID: ctx.sessionID,
+                messageID: ctx.assistantMessage.id,
+              }),
+              // kilocode_change end
               messageID: ctx.assistantMessage.id,
               sessionID: ctx.assistantMessage.sessionID,
               type: "step-finish",

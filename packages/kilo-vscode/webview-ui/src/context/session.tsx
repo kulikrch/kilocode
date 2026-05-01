@@ -746,6 +746,11 @@ export const SessionProvider: ParentComponent = (props) => {
       return true
     }
 
+    if (message.type === "partRemoved") {
+      handlePartRemoved(message.sessionID, message.messageID, message.partID)
+      return true
+    }
+
     return false
   }
 
@@ -1132,6 +1137,21 @@ export const SessionProvider: ParentComponent = (props) => {
           // Add new part
           parts[effectiveMessageID].push(part)
         }
+      }),
+    )
+  }
+
+  function handlePartRemoved(sessionID: string | undefined, messageID: string, partID: string) {
+    if (sessionID) patchPage(sessionID, { lastMutation: "update" })
+
+    setStore(
+      "parts",
+      produce((parts) => {
+        const list = parts[messageID]
+        if (!list) return
+        const idx = list.findIndex((p) => p.id === partID)
+        if (idx < 0) return
+        list.splice(idx, 1)
       }),
     )
   }

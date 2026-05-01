@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Implementar em uma nova sessão com contexto limpo",
   "plan.followup.answer.continue": "Continuar aqui",
   "plan.followup.answer.continue.description": "Implementar o plano nesta sessão",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Snapshot está lento",
+  "snapshot.slowRepo.question":
+    "O sistema de snapshots do Kilo permite desfazer e refazer cada alteração de arquivo que o Kilo faz durante a conversa. Seu histórico do git não é afetado — os snapshots são armazenados separadamente.\n\nO snapshot inicial deste repositório está demorando mais do que o esperado. Em bases de código muito grandes isso pode atrasar cada turno significativamente.\n\nVocê pode continuar aguardando ou desativar os snapshots para este projeto e contar apenas com o git. Essa escolha é salva em `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "Continuar com snapshots",
+  "snapshot.slowRepo.answer.continue.description":
+    "Aguarde a conclusão do snapshot. Os próximos turnos serão rápidos depois que o snapshot inicial for criado.",
+  "snapshot.slowRepo.answer.disable": "Desativar para este projeto",
+  "snapshot.slowRepo.answer.disable.description":
+    "Desligue os snapshots do Kilo para este projeto. Você perde desfazer/refazer das mudanças feitas pelo Kilo, mas o git continua rastreando tudo.",
+
+  "ui.messagePart.openInDiffViewer": "Abrir no Visualizador de Diferenças",
 }

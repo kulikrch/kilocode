@@ -77,4 +77,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "깨끗한 컨텍스트의 새 세션에서 구현",
   "plan.followup.answer.continue": "여기서 계속하기",
   "plan.followup.answer.continue.description": "이 세션에서 계획 구현",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "스냅샷이 느립니다",
+  "snapshot.slowRepo.question":
+    "Kilo의 스냅샷 시스템을 사용하면 대화 중에 Kilo가 만든 모든 파일 변경을 실행 취소하거나 다시 실행할 수 있습니다. git 히스토리는 영향을 받지 않으며 스냅샷은 별도로 저장됩니다.\n\n이 저장소의 초기 스냅샷이 예상보다 오래 걸리고 있습니다. 매우 큰 코드베이스에서는 매 턴이 크게 지연될 수 있습니다.\n\n계속 기다리거나 이 프로젝트에 대해 스냅샷을 비활성화하고 git만 사용할 수 있습니다. 이 선택은 `.kilo/kilo.json`에 저장됩니다.",
+  "snapshot.slowRepo.answer.continue": "스냅샷 계속 사용",
+  "snapshot.slowRepo.answer.continue.description":
+    "스냅샷이 완료될 때까지 기다리세요. 초기 스냅샷이 만들어지면 이후 턴은 빠릅니다.",
+  "snapshot.slowRepo.answer.disable": "이 프로젝트에서 비활성화",
+  "snapshot.slowRepo.answer.disable.description":
+    "이 프로젝트의 Kilo 스냅샷을 끕니다. Kilo 변경에 대한 실행 취소/다시 실행은 사용할 수 없지만 git은 여전히 모든 것을 추적합니다.",
+
+  "ui.messagePart.openInDiffViewer": "Diff 뷰어에서 열기",
 }

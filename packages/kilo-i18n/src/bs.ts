@@ -84,4 +84,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Implementiraj u novoj sesiji s čistim kontekstom",
   "plan.followup.answer.continue": "Nastavi ovdje",
   "plan.followup.answer.continue.description": "Implementiraj plan u ovoj sesiji",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Snapshot je spor",
+  "snapshot.slowRepo.question":
+    "Kilo sistem snapshotova omogućava vam da poništite ili vratite svaku promjenu fajla koju Kilo napravi tokom razgovora. Vaša git historija ostaje netaknuta — snapshotovi se čuvaju odvojeno.\n\nPočetni snapshot ovog repozitorija traje duže nego očekivano. Na veoma velikim bazama koda ovo može znatno odgoditi svaki potez.\n\nMožete nastaviti čekati ili onemogućiti snapshotove za ovaj projekat i osloniti se samo na git. Ovaj izbor se čuva u `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "Nastavi sa snapshotovima",
+  "snapshot.slowRepo.answer.continue.description":
+    "Sačekaj da se snapshot završi. Naredni potezi su brzi kada se početni snapshot jednom napravi.",
+  "snapshot.slowRepo.answer.disable": "Onemogući za ovaj projekat",
+  "snapshot.slowRepo.answer.disable.description":
+    "Isključi Kilo snapshotove za ovaj projekat. Izgubićete poništi/vrati za izmjene koje napravi Kilo, ali git i dalje prati sve.",
+
+  "ui.messagePart.openInDiffViewer": "Otvori u pregledniku razlika",
 }

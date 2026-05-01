@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "نفّذ في جلسة جديدة بسياق نظيف",
   "plan.followup.answer.continue": "المتابعة هنا",
   "plan.followup.answer.continue.description": "نفّذ الخطة في هذه الجلسة",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "اللقطة بطيئة",
+  "snapshot.slowRepo.question":
+    "يتيح لك نظام اللقطات في Kilo التراجع عن كل تغيير في الملفات يقوم به Kilo خلال المحادثة. لا يتم المساس بتاريخ git لديك — يتم تخزين اللقطات بشكل منفصل.\n\nتستغرق اللقطة الأولى لهذا المستودع وقتًا أطول من المتوقع. على قواعد الشيفرات الضخمة قد يؤدي ذلك إلى تأخير كل دورة بشكل ملحوظ.\n\nيمكنك الانتظار أو تعطيل اللقطات لهذا المشروع والاعتماد على git بدلاً منها. يتم حفظ هذا الاختيار في `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "المتابعة مع اللقطات",
+  "snapshot.slowRepo.answer.continue.description":
+    "استمر في الانتظار حتى تكتمل اللقطة. تكون الدورات اللاحقة سريعة بعد إنشاء اللقطة الأولى.",
+  "snapshot.slowRepo.answer.disable": "تعطيل لهذا المشروع",
+  "snapshot.slowRepo.answer.disable.description":
+    "أوقف لقطات Kilo لهذا المشروع. ستفقد ميزة التراجع/الإعادة لتعديلات Kilo، لكن git سيستمر في تتبع كل شيء.",
+
+  "ui.messagePart.openInDiffViewer": "فتح في عارض الفروقات",
 }

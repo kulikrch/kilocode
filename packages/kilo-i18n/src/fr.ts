@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Implémenter dans une nouvelle session avec un contexte vierge",
   "plan.followup.answer.continue": "Continuer ici",
   "plan.followup.answer.continue.description": "Implémenter le plan dans cette session",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Instantané lent",
+  "snapshot.slowRepo.question":
+    "Le système d'instantanés de Kilo vous permet d'annuler et de rétablir chaque modification de fichier effectuée par Kilo pendant la conversation. Votre historique git n'est pas touché — les instantanés sont stockés séparément.\n\nL'instantané initial de ce dépôt prend plus de temps que prévu. Sur des bases de code très volumineuses, cela peut ralentir considérablement chaque tour.\n\nVous pouvez continuer à attendre ou désactiver les instantanés pour ce projet et ne compter que sur git. Ce choix est enregistré dans `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "Continuer avec les instantanés",
+  "snapshot.slowRepo.answer.continue.description":
+    "Attendez la fin de l'instantané. Les tours suivants sont rapides une fois l'instantané initial créé.",
+  "snapshot.slowRepo.answer.disable": "Désactiver pour ce projet",
+  "snapshot.slowRepo.answer.disable.description":
+    "Désactivez les instantanés Kilo pour ce projet. Vous perdez l'annulation/restauration des modifications faites par Kilo, mais git continue de tout suivre.",
+
+  "ui.messagePart.openInDiffViewer": "Ouvrir dans la visionneuse de différences",
 }

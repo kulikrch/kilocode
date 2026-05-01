@@ -1247,6 +1247,10 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
   })
 
   const showCopy = createMemo(() => {
+    // Synthetic text parts (e.g. "Initializing snapshot…" from the slow-repo
+    // guard) are transient status indicators, not assistant output — they
+    // must never carry the copy button.
+    if (part().synthetic) return false
     if (props.message.role !== "assistant") return false
     if (props.showAssistantCopyPartID === null) return false
     return props.showAssistantCopyPartID === part().id

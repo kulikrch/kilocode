@@ -1471,13 +1471,18 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     () => props.message.role === "assistant" && typeof (props.message as AssistantMessage).time.completed !== "number",
   )
   const text = () => (part().text ?? "").trim()
+  // Synthetic text parts (e.g. "Initializing snapshot…" from the slow-repo guard)
+  // are transient status indicators, not assistant output — they must never
+  // carry the copy button, and they must not "steal" last-part status from
+  // the actual assistant response that precedes them.
   const isLastTextPart = createMemo(() => {
     const last = (data.store.part?.[props.message.id] ?? [])
-      .filter((item): item is TextPart => item?.type === "text" && !!item.text?.trim())
+      .filter((item): item is TextPart => item?.type === "text" && !!item.text?.trim() && !item.synthetic)
       .at(-1)
     return last?.id === part().id
   })
   const showCopy = createMemo(() => {
+    if (part().synthetic) return false
     if (props.message.role !== "assistant") return isLastTextPart()
     if (props.showAssistantCopyPartID === null) return false
     if (typeof props.showAssistantCopyPartID === "string") return props.showAssistantCopyPartID === part().id

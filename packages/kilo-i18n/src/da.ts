@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Implementér i en ny session med ren kontekst",
   "plan.followup.answer.continue": "Fortsæt her",
   "plan.followup.answer.continue.description": "Implementér planen i denne session",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Snapshot er langsomt",
+  "snapshot.slowRepo.question":
+    "Kilos snapshot-system lader dig fortryde og genskabe hver filændring, Kilo laver under samtalen. Din git-historik forbliver urørt — snapshots gemmes separat.\n\nDet indledende snapshot af denne repository tager længere end forventet. På meget store kodebaser kan det forsinke hver tur betydeligt.\n\nDu kan vente videre eller deaktivere snapshots for dette projekt og bruge git i stedet. Dette valg gemmes i `.kilo/kilo.json`.",
+  "snapshot.slowRepo.answer.continue": "Fortsæt med snapshots",
+  "snapshot.slowRepo.answer.continue.description":
+    "Vent, indtil snapshot'et er færdigt. Efterfølgende ture er hurtige, når det indledende snapshot er bygget.",
+  "snapshot.slowRepo.answer.disable": "Deaktivér for dette projekt",
+  "snapshot.slowRepo.answer.disable.description":
+    "Slå Kilos snapshots fra for dette projekt. Du mister fortryd/gentag for Kilo-ændringer, men git sporer stadig alt.",
+
+  "ui.messagePart.openInDiffViewer": "Åbn i diff-viser",
 }

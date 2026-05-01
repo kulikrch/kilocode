@@ -77,4 +77,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "クリーンなコンテキストの新しいセッションで実装する",
   "plan.followup.answer.continue": "ここで続行",
   "plan.followup.answer.continue.description": "このセッションで計画を実装する",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "スナップショットが遅い",
+  "snapshot.slowRepo.question":
+    "Kilo のスナップショット機能は、会話中に Kilo が行ったすべてのファイル変更を取り消し・やり直しできます。git の履歴には影響せず、スナップショットは別に保存されます。\n\nこのリポジトリの初回スナップショットに予想以上の時間がかかっています。非常に大きなコードベースでは各ターンが大きく遅延する可能性があります。\n\nこのまま待つか、このプロジェクトではスナップショットを無効にして git のみに任せることもできます。選択内容は `.kilo/kilo.json` に保存されます。",
+  "snapshot.slowRepo.answer.continue": "スナップショットを続行",
+  "snapshot.slowRepo.answer.continue.description":
+    "スナップショットが完了するまで待機します。初回のスナップショットが作成された後は、以降のターンは高速になります。",
+  "snapshot.slowRepo.answer.disable": "このプロジェクトで無効化",
+  "snapshot.slowRepo.answer.disable.description":
+    "このプロジェクトでは Kilo のスナップショットを無効にします。Kilo による変更の取り消し/やり直しはできなくなりますが、git は引き続きすべてを追跡します。",
+
+  "ui.messagePart.openInDiffViewer": "差分ビューアで開く",
 }

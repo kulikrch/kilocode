@@ -76,4 +76,16 @@ export const dict = {
   "plan.followup.answer.newSession.description": "在具有乾淨上下文的新工作階段中實作",
   "plan.followup.answer.continue": "在此繼續",
   "plan.followup.answer.continue.description": "在本工作階段中實作計畫",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "快照速度較慢",
+  "snapshot.slowRepo.question":
+    "Kilo 的快照系統讓你可以撤銷和重做 Kilo 在對話期間所做的每一次檔案變更。你的 git 歷史紀錄不會受到影響——快照會分開儲存。\n\n這個儲存庫的初始快照所花費的時間比預期更長。在非常大的程式碼庫上，這可能會顯著延遲每一輪操作。\n\n你可以繼續等待，或是為這個專案停用快照，僅依賴 git。此選擇會儲存至 `.kilo/kilo.json`。",
+  "snapshot.slowRepo.answer.continue": "繼續使用快照",
+  "snapshot.slowRepo.answer.continue.description": "等待快照完成。初始快照建立後，後續回合會很快。",
+  "snapshot.slowRepo.answer.disable": "為此專案停用",
+  "snapshot.slowRepo.answer.disable.description":
+    "關閉本專案的 Kilo 快照。你將失去對 Kilo 變更的撤銷/重做，但 git 仍會追蹤所有內容。",
+
+  "ui.messagePart.openInDiffViewer": "在差異檢視器中開啟",
 }

@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "Temiz bir bağlamla yeni bir oturumda uygula",
   "plan.followup.answer.continue": "Burada devam et",
   "plan.followup.answer.continue.description": "Planı bu oturumda uygula",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "Anlık görüntü yavaş",
+  "snapshot.slowRepo.question":
+    "Kilo'nun anlık görüntü sistemi, konuşma sırasında Kilo'nun yaptığı her dosya değişikliğini geri almanıza ve yeniden yapmanıza olanak tanır. git geçmişinize dokunulmaz — anlık görüntüler ayrı bir yerde saklanır.\n\nBu deponun ilk anlık görüntüsü beklenenden uzun sürüyor. Çok büyük kod tabanlarında bu, her turu önemli ölçüde geciktirebilir.\n\nBeklemeye devam edebilir veya bu proje için anlık görüntüleri devre dışı bırakıp yalnızca git'e güvenebilirsiniz. Bu seçim `.kilo/kilo.json` dosyasına kaydedilir.",
+  "snapshot.slowRepo.answer.continue": "Anlık görüntülerle devam et",
+  "snapshot.slowRepo.answer.continue.description":
+    "Anlık görüntü tamamlanana kadar bekleyin. İlk anlık görüntü oluşturulduktan sonra sonraki turlar hızlıdır.",
+  "snapshot.slowRepo.answer.disable": "Bu proje için devre dışı bırak",
+  "snapshot.slowRepo.answer.disable.description":
+    "Bu proje için Kilo anlık görüntülerini kapat. Kilo değişiklikleri için geri alma/yeniden yapmayı kaybedersiniz, ancak git her şeyi izlemeye devam eder.",
+
+  "ui.messagePart.openInDiffViewer": "Fark görüntüleyicide aç",
 }

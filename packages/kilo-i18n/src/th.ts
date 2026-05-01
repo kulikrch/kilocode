@@ -79,4 +79,17 @@ export const dict = {
   "plan.followup.answer.newSession.description": "ดำเนินการในเซสชันใหม่ที่มีบริบทว่างเปล่า",
   "plan.followup.answer.continue": "ดำเนินการต่อที่นี่",
   "plan.followup.answer.continue.description": "ดำเนินการตามแผนในเซสชันนี้",
+
+  // Slow-repo snapshot prompt
+  "snapshot.slowRepo.header": "สแน็ปช็อตช้า",
+  "snapshot.slowRepo.question":
+    "ระบบสแน็ปช็อตของ Kilo ช่วยให้คุณยกเลิกและทำซ้ำการเปลี่ยนแปลงไฟล์ทุกครั้งที่ Kilo ทำระหว่างการสนทนา ประวัติ git ของคุณจะไม่ถูกแตะต้อง — สแน็ปช็อตจะถูกจัดเก็บแยกต่างหาก\n\nสแน็ปช็อตแรกของที่เก็บนี้ใช้เวลานานกว่าที่คาดไว้ ในโค้ดเบสขนาดใหญ่มาก สิ่งนี้อาจทำให้แต่ละเทิร์นล่าช้าอย่างมาก\n\nคุณสามารถรอต่อหรือปิดการใช้งานสแน็ปช็อตสำหรับโปรเจกต์นี้และพึ่งพา git แทน ตัวเลือกนี้จะถูกบันทึกใน `.kilo/kilo.json`",
+  "snapshot.slowRepo.answer.continue": "ใช้สแน็ปช็อตต่อ",
+  "snapshot.slowRepo.answer.continue.description":
+    "รอจนกว่าสแน็ปช็อตจะเสร็จ เทิร์นถัดไปจะเร็วขึ้นเมื่อสร้างสแน็ปช็อตแรกเสร็จแล้ว",
+  "snapshot.slowRepo.answer.disable": "ปิดใช้งานสำหรับโปรเจกต์นี้",
+  "snapshot.slowRepo.answer.disable.description":
+    "ปิดสแน็ปช็อตของ Kilo สำหรับโปรเจกต์นี้ คุณจะสูญเสียการยกเลิก/ทำซ้ำสำหรับการเปลี่ยนแปลงของ Kilo แต่ git ยังคงติดตามทุกอย่าง",
+
+  "ui.messagePart.openInDiffViewer": "เปิดในตัวดูความแตกต่าง",
 }
