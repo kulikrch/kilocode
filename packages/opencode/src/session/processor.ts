@@ -389,9 +389,10 @@ export const layer: Layer.Layer<
 
           case "start-step":
             ctx.stepStart = performance.now() // kilocode_change
+            // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
             if (!ctx.snapshot)
-              // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
-              ctx.snapshot = yield* snapshot.track({ sessionID: ctx.sessionID, messageID: ctx.assistantMessage.id }) // kilocode_change end - pass sessionID + messageID
+              ctx.snapshot = yield* snapshot.track({ sessionID: ctx.sessionID, messageID: ctx.assistantMessage.id })
+            // kilocode_change end
             yield* session.updatePart({
               id: PartID.ascending(),
               messageID: ctx.assistantMessage.id,
@@ -407,13 +408,15 @@ export const layer: Layer.Layer<
               usage: value.usage,
               metadata: value.providerMetadata,
             })
-            // kilocode_change start
+            // kilocode_change start - guard against finish-step without start-step:
+            // ctx.stepStart is 0 until `start-step` fires, which would feed a
+            // huge bogus `elapsed` into telemetry. Fall back to now().
             KiloSessionProcessor.trackStep({
               sessionID: ctx.sessionID,
               model: ctx.model,
               tokens: usage.tokens,
               cost: usage.cost,
-              elapsed: Math.round(performance.now() - ctx.stepStart),
+              elapsed: Math.round(performance.now() - (ctx.stepStart || performance.now())),
             })
             // kilocode_change end
             ctx.assistantMessage.finish = value.finishReason

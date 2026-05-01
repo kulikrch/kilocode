@@ -88,7 +88,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "Snapshot je spor",
   "snapshot.slowRepo.question":
-    "Kilo sistem snapshotova omogućava vam da poništite ili vratite svaku promjenu fajla koju Kilo napravi tokom razgovora. Vaša git historija ostaje netaknuta — snapshotovi se čuvaju odvojeno.\n\nPočetni snapshot ovog repozitorija traje duže nego očekivano. Na veoma velikim bazama koda ovo može znatno odgoditi svaki potez.\n\nMožete nastaviti čekati ili onemogućiti snapshotove za ovaj projekat i osloniti se samo na git. Ovaj izbor se čuva u `.kilo/kilo.json`.",
+    "Inicijalizacija sistema snapshotova traje dugo, vjerovatno zbog veličine repozitorija.\n\nŽelite li onemogućiti snapshotove za ovaj repozitorij?",
   "snapshot.slowRepo.answer.continue": "Nastavi sa snapshotovima",
   "snapshot.slowRepo.answer.continue.description":
     "Sačekaj da se snapshot završi. Naredni potezi su brzi kada se početni snapshot jednom napravi.",

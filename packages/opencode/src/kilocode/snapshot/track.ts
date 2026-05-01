@@ -29,7 +29,7 @@
 //     prompts so a slow repo doesn't spam the user every turn.
 //   - We do NOT call `Config.update()` when the user picks "Disable" because
 //     that finalizer runs `Instance.dispose()` and tears down the live turn.
-//     Instead we write the file directly via `KilocodeConfig.updateProjectConfig`
+//     Instead we write `.kilo/kilo.json` directly via AppFileSystem
 //     without touching the active Config service.
 //   - If the user picks "Continue", the fiber keeps running; we just `join` it
 //     and return its value. Any error during the in-flight snapshot is logged
@@ -44,6 +44,7 @@ import { AppFileSystem } from "@opencode-ai/shared/filesystem"
 import { Question } from "@/question"
 import type { MessageID, PartID, SessionID } from "@/session/schema"
 import { PartID as PartIDSchema } from "@/session/schema"
+import type { MessageV2 } from "@/session/message-v2"
 import { KilocodeConfig } from "@/kilocode/config/config"
 import { ConfigParse } from "@/config/parse"
 import { Log } from "@/util"
@@ -55,6 +56,31 @@ import type { Config } from "@/config"
 // `Session.Service` at module load races with our own initialization and
 // throws "Cannot access 'Service' before initialization". The session
 // runtime is built lazily on first use inside the default hooks.
+//
+// The type-only import of `MessageV2` above is erased at compile time, so it
+// doesn't participate in the runtime cycle — it just lets us type the narrow
+// part-API shim below without `as any`.
+
+/**
+ * Narrow typed view of the `Session.Service` methods we actually call from
+ * `defaultHooks`. Keeping this local instead of importing `Session.Interface`
+ * avoids the value-level cycle described above, while still giving us
+ * compile-time checking on payload shape. If `Session.Service` ever renames
+ * these methods the cast in `sessionRuntime()` below will fail typecheck
+ * instead of blowing up at runtime.
+ */
+interface SessionPartAPI {
+  readonly updatePart: <T extends MessageV2.Part>(part: T) => Effect.Effect<T>
+  readonly removePart: (input: {
+    sessionID: SessionID
+    messageID: MessageID
+    partID: PartID
+  }) => Effect.Effect<PartID>
+}
+
+type SessionRuntime = {
+  runPromise: <A>(fn: (svc: SessionPartAPI) => Effect.Effect<A>) => Promise<A>
+}
 
 export namespace KiloSnapshotTrack {
   const log = Log.create({ service: "snapshot.track" })
@@ -305,6 +331,13 @@ export namespace KiloSnapshotTrack {
         )
         if (progressFiber) yield* Fiber.interrupt(progressFiber)
         yield* clearProgress()
+        // Reset `asked` only when the snapshot actually succeeded. That way a
+        // future slow turn (e.g. a new massive worktree gets added) still
+        // surfaces the dialog instead of silently disabling snapshots on a
+        // user who just explicitly said "keep them on". If the fiber failed
+        // (finished === undefined), we leave `asked` sticky to avoid prompt
+        // spam on a repo that repeatedly errors.
+        if (finished) input.state.asked = false
         return finished
       }
 
@@ -333,32 +366,38 @@ export namespace KiloSnapshotTrack {
 
   const fsRt = makeRuntime(AppFileSystem.Service, AppFileSystem.defaultLayer)
 
-  // Lazy to break a module-load cycle with @/session/index.ts.
-  let cachedSessionRt: ReturnType<typeof makeRuntime<unknown, unknown, never>> | undefined
-  async function sessionRuntime(): Promise<ReturnType<typeof makeRuntime<unknown, unknown, never>>> {
+  // Lazy to break a module-load cycle with @/session/index.ts. The single
+  // cast on the `makeRuntime(...)` result narrows the fully generic runtime
+  // to the small `SessionPartAPI` surface defined above.
+  let cachedSessionRt: SessionRuntime | undefined
+  async function sessionRuntime(): Promise<SessionRuntime> {
     if (cachedSessionRt) return cachedSessionRt
     const mod = await import("@/session")
-    cachedSessionRt = makeRuntime(mod.Session.Service, mod.Session.defaultLayer) as ReturnType<
-      typeof makeRuntime<unknown, unknown, never>
-    >
+    cachedSessionRt = makeRuntime(mod.Session.Service, mod.Session.defaultLayer) as unknown as SessionRuntime
     return cachedSessionRt
   }
+
+  /** Build the synthetic progress part payload so both start/update share one shape. */
+  const progressPart = (input: {
+    sessionID: SessionID
+    messageID: MessageID
+    partID: PartID
+    text: string
+  }): MessageV2.TextPart => ({
+    id: input.partID,
+    messageID: input.messageID,
+    sessionID: input.sessionID,
+    type: "text",
+    text: input.text,
+    synthetic: true,
+  })
 
   export const defaultHooks: Hooks = {
     async startProgress(input) {
       const partID = PartIDSchema.ascending()
       try {
         const rt = await sessionRuntime()
-        await rt.runPromise((svc) =>
-          (svc as any).updatePart({
-            id: partID,
-            messageID: input.messageID,
-            sessionID: input.sessionID,
-            type: "text",
-            text: input.text,
-            synthetic: true,
-          }),
-        )
+        await rt.runPromise((svc) => svc.updatePart(progressPart({ ...input, partID })))
         return { sessionID: input.sessionID, messageID: input.messageID, partID }
       } catch (err) {
         log.warn("failed to publish snapshot progress part", { err })
@@ -370,14 +409,14 @@ export namespace KiloSnapshotTrack {
       try {
         const rt = await sessionRuntime()
         await rt.runPromise((svc) =>
-          (svc as any).updatePart({
-            id: input.handle.partID,
-            messageID: input.handle.messageID,
-            sessionID: input.handle.sessionID,
-            type: "text",
-            text: input.text,
-            synthetic: true,
-          }),
+          svc.updatePart(
+            progressPart({
+              sessionID: input.handle.sessionID,
+              messageID: input.handle.messageID,
+              partID: input.handle.partID,
+              text: input.text,
+            }),
+          ),
         )
       } catch (err) {
         log.warn("failed to update snapshot progress part", { err })
@@ -388,7 +427,7 @@ export namespace KiloSnapshotTrack {
       try {
         const rt = await sessionRuntime()
         await rt.runPromise((svc) =>
-          (svc as any).removePart({
+          svc.removePart({
             sessionID: input.handle.sessionID,
             messageID: input.handle.messageID,
             partID: input.handle.partID,
@@ -446,11 +485,13 @@ export namespace KiloSnapshotTrack {
       if (!directory) return
       const root = directory.worktree ?? directory.directory
       const file = path.join(root, ".kilo", "kilo.json")
+      // Every field on Config.Info is Schema.optional(...), so a single-key
+      // object is structurally a valid Config.Info — no cast needed.
+      const patch: Config.Info = { snapshot: false }
       await fsRt.runPromise((fs) =>
         Effect.gen(function* () {
           const before = yield* fs.readFileString(file).pipe(Effect.catch(() => Effect.succeed("{}")))
           const existing = ConfigParse.jsonc(before, file) as Config.Info
-          const patch = { snapshot: false } as Config.Info
           const merged = KilocodeConfig.mergeConfig(existing, patch)
           yield* fs.ensureDir(path.dirname(file)).pipe(Effect.orDie)
           yield* fs.writeFileString(file, JSON.stringify(merged, null, 2)).pipe(Effect.orDie)

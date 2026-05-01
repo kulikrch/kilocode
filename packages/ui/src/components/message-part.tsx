@@ -1475,6 +1475,13 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
   // are transient status indicators, not assistant output — they must never
   // carry the copy button, and they must not "steal" last-part status from
   // the actual assistant response that precedes them.
+  //
+  // On a clean turn the backend removes the part via `removePart` once the
+  // snapshot finishes, so it never reaches this branch. But if the host
+  // process is hard-killed mid-snapshot the part stays in storage and
+  // re-appears on session reload; hiding it when the owning message is no
+  // longer streaming keeps the scrollback clean in that edge case.
+  const showSyntheticPart = createMemo(() => !part().synthetic || streaming())
   const isLastTextPart = createMemo(() => {
     const last = (data.store.part?.[props.message.id] ?? [])
       .filter((item): item is TextPart => item?.type === "text" && !!item.text?.trim() && !item.synthetic)
@@ -1499,7 +1506,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
   }
 
   return (
-    <Show when={text()}>
+    <Show when={text() && showSyntheticPart()}>
       <div data-component="text-part">
         <div data-slot="text-part-body">
           <Show when={streaming()} fallback={<Markdown text={text()} cacheKey={part().id} streaming={false} />}>

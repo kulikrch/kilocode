@@ -83,7 +83,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "Instantané lent",
   "snapshot.slowRepo.question":
-    "Le système d'instantanés de Kilo vous permet d'annuler et de rétablir chaque modification de fichier effectuée par Kilo pendant la conversation. Votre historique git n'est pas touché — les instantanés sont stockés séparément.\n\nL'instantané initial de ce dépôt prend plus de temps que prévu. Sur des bases de code très volumineuses, cela peut ralentir considérablement chaque tour.\n\nVous pouvez continuer à attendre ou désactiver les instantanés pour ce projet et ne compter que sur git. Ce choix est enregistré dans `.kilo/kilo.json`.",
+    "L'initialisation du système d'instantanés prend beaucoup de temps, probablement en raison de la taille du dépôt.\n\nVoulez-vous désactiver les instantanés pour ce dépôt ?",
   "snapshot.slowRepo.answer.continue": "Continuer avec les instantanés",
   "snapshot.slowRepo.answer.continue.description":
     "Attendez la fin de l'instantané. Les tours suivants sont rapides une fois l'instantané initial créé.",

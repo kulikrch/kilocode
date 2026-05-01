@@ -83,7 +83,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "Snapshot ist langsam",
   "snapshot.slowRepo.question":
-    "Das Snapshot-System von Kilo ermöglicht Rückgängig/Wiederherstellen für jede Dateiänderung, die Kilo während der Konversation vornimmt. Deine git-Historie bleibt unberührt – Snapshots werden separat gespeichert.\n\nDer erste Snapshot dieses Repositorys dauert länger als erwartet. Bei sehr großen Codebasen kann das jede Runde spürbar verzögern.\n\nDu kannst weiter warten oder Snapshots für dieses Projekt deaktivieren und dich auf git verlassen. Diese Auswahl wird in `.kilo/kilo.json` gespeichert.",
+    "Die Initialisierung des Snapshot-Systems dauert lange, wahrscheinlich aufgrund der Größe des Repositorys.\n\nMöchtest du Snapshots für dieses Repository deaktivieren?",
   "snapshot.slowRepo.answer.continue": "Snapshots beibehalten",
   "snapshot.slowRepo.answer.continue.description":
     "Auf den Abschluss des Snapshots warten. Nachfolgende Runden sind schnell, sobald der initiale Snapshot erstellt ist.",

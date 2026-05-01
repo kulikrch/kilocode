@@ -22,6 +22,14 @@ const slowInner = (ms: number, hash = "slowhash") =>
 // Build an inner snapshot that never completes unless interrupted.
 const hangInner = () => Effect.promise(() => new Promise<string | undefined>(() => {}))
 
+// Build an inner snapshot that fails with a typed Effect error. The double
+// cast mirrors how the real `Snapshot.track` Effect is shaped: callers see
+// `Effect.Effect<string | undefined>` (error channel `never`), but failures
+// can still flow through because the production code path uses `Effect.catch`
+// to absorb them. Centralizing the cast here keeps per-test code readable.
+const failingInner = (err: Error) =>
+  Effect.fail(err as unknown as never) as unknown as Effect.Effect<string | undefined>
+
 type Event = { kind: "start"; text: string } | { kind: "update"; text: string } | { kind: "end" }
 
 interface Calls {
@@ -126,7 +134,9 @@ describe("KiloSnapshotTrack.wrap", () => {
     expect(result).toBe("finished-late")
     expect(calls.ask).toBe(1)
     expect(calls.persist).toBe(0)
-    expect(state.asked).toBe(true)
+    // After a successful "continue" the guard resets `asked` so a subsequent
+    // slow turn still gets the dialog instead of being silently disabled.
+    expect(state.asked).toBe(false)
     expect(state.disabledForSession).toBe(false)
   })
 
@@ -239,7 +249,7 @@ describe("KiloSnapshotTrack.wrap", () => {
     expect(secondCalls.ask).toBe(0)
   })
 
-  test("second call after a slow+continue answer does not re-prompt", async () => {
+  test("second slow call after a successful continue re-asks instead of silently disabling", async () => {
     const state = KiloSnapshotTrack.makeState()
     const { hooks, calls } = makeHooks("continue")
 
@@ -257,10 +267,12 @@ describe("KiloSnapshotTrack.wrap", () => {
     )
     expect(first).toBe("hash-1")
     expect(calls.ask).toBe(1)
-    expect(state.asked).toBe(true)
+    // Reset semantics: successful continue clears `asked` so a future slow
+    // turn gets the dialog again instead of being silently disabled.
+    expect(state.asked).toBe(false)
     expect(state.disabledForSession).toBe(false)
 
-    // Second call: still slow → we already asked, so skip silently
+    // Second call: still slow → dialog again → user picks continue again → finishes
     const second = await Effect.runPromise(
       KiloSnapshotTrack.wrap({
         inner: slowInner(80, "hash-2"),
@@ -272,9 +284,37 @@ describe("KiloSnapshotTrack.wrap", () => {
         progressDelayMs: 5,
       }),
     )
-    expect(second).toBeUndefined()
-    expect(calls.ask).toBe(1) // unchanged
-    expect(state.disabledForSession).toBe(true)
+    expect(second).toBe("hash-2")
+    expect(calls.ask).toBe(2) // re-asked
+    expect(state.disabledForSession).toBe(false)
+  })
+
+  test("continue path keeps `asked` sticky when the fiber finished with no hash", async () => {
+    const state = KiloSnapshotTrack.makeState()
+    const { hooks, calls } = makeHooks("continue")
+
+    // Simulate the fiber eventually completing but with no hash (e.g.
+    // snapshot disabled mid-flight or non-git repo). The continue path waits
+    // for it, so we get undefined back — and we must not reset `asked`,
+    // otherwise repeated failures would keep re-prompting the user every
+    // turn.
+    const noHashInner = Effect.promise(
+      () => new Promise<string | undefined>((resolve) => setTimeout(() => resolve(undefined), 80)),
+    )
+    const first = await Effect.runPromise(
+      KiloSnapshotTrack.wrap({
+        inner: noHashInner,
+        state,
+        sessionID: SESSION,
+        messageID: MESSAGE,
+        hooks,
+        timeoutMs: 20,
+        progressDelayMs: 5,
+      }),
+    )
+    expect(first).toBeUndefined()
+    expect(calls.ask).toBe(1)
+    expect(state.asked).toBe(true)
   })
 
   test("inner typed failure is caught and returned as undefined", async () => {
@@ -285,13 +325,9 @@ describe("KiloSnapshotTrack.wrap", () => {
     // what Effect.catch inside wrap() is designed to handle. Untyped defects
     // (e.g. rejected Promises without Effect.tryPromise) are NOT caught; they
     // propagate and surface as test failures.
-    const errorInner = Effect.fail(new Error("boom") as unknown as never) as unknown as Effect.Effect<
-      string | undefined
-    >
-
     const result = await Effect.runPromise(
       KiloSnapshotTrack.wrap({
-        inner: errorInner,
+        inner: failingInner(new Error("boom")),
         state,
         sessionID: SESSION,
         messageID: MESSAGE,

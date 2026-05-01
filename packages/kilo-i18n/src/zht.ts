@@ -80,7 +80,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "快照速度較慢",
   "snapshot.slowRepo.question":
-    "Kilo 的快照系統讓你可以撤銷和重做 Kilo 在對話期間所做的每一次檔案變更。你的 git 歷史紀錄不會受到影響——快照會分開儲存。\n\n這個儲存庫的初始快照所花費的時間比預期更長。在非常大的程式碼庫上，這可能會顯著延遲每一輪操作。\n\n你可以繼續等待，或是為這個專案停用快照，僅依賴 git。此選擇會儲存至 `.kilo/kilo.json`。",
+    "初始化快照系統耗時較長，可能是由於儲存庫的大小。\n\n是否要為此儲存庫停用快照？",
   "snapshot.slowRepo.answer.continue": "繼續使用快照",
   "snapshot.slowRepo.answer.continue.description": "等待快照完成。初始快照建立後，後續回合會很快。",
   "snapshot.slowRepo.answer.disable": "為此專案停用",

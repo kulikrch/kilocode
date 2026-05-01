@@ -83,7 +83,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "Snapshot er tregt",
   "snapshot.slowRepo.question":
-    "Kilos snapshot-system lar deg angre og gjøre om hver filendring Kilo gjør i løpet av samtalen. Git-historikken din forblir urørt — snapshots lagres separat.\n\nDet første snapshotet av dette depotet tar lengre tid enn forventet. På svært store kodebaser kan det forsinke hver runde betydelig.\n\nDu kan fortsette å vente eller deaktivere snapshots for dette prosjektet og stole på git i stedet. Valget lagres i `.kilo/kilo.json`.",
+    "Det tar lang tid å initialisere snapshot-systemet, sannsynligvis på grunn av størrelsen på depotet.\n\nVil du deaktivere snapshots for dette depotet?",
   "snapshot.slowRepo.answer.continue": "Fortsett med snapshots",
   "snapshot.slowRepo.answer.continue.description":
     "Vent til snapshotet er ferdig. Påfølgende runder er raske når det første snapshotet er bygget.",

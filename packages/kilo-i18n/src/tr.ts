@@ -83,7 +83,7 @@ export const dict = {
   // Slow-repo snapshot prompt
   "snapshot.slowRepo.header": "Anlık görüntü yavaş",
   "snapshot.slowRepo.question":
-    "Kilo'nun anlık görüntü sistemi, konuşma sırasında Kilo'nun yaptığı her dosya değişikliğini geri almanıza ve yeniden yapmanıza olanak tanır. git geçmişinize dokunulmaz — anlık görüntüler ayrı bir yerde saklanır.\n\nBu deponun ilk anlık görüntüsü beklenenden uzun sürüyor. Çok büyük kod tabanlarında bu, her turu önemli ölçüde geciktirebilir.\n\nBeklemeye devam edebilir veya bu proje için anlık görüntüleri devre dışı bırakıp yalnızca git'e güvenebilirsiniz. Bu seçim `.kilo/kilo.json` dosyasına kaydedilir.",
+    "Anlık görüntü sisteminin başlatılması uzun sürüyor, muhtemelen deponun boyutu nedeniyle.\n\nBu depo için anlık görüntüleri devre dışı bırakmak istiyor musunuz?",
   "snapshot.slowRepo.answer.continue": "Anlık görüntülerle devam et",
   "snapshot.slowRepo.answer.continue.description":
     "Anlık görüntü tamamlanana kadar bekleyin. İlk anlık görüntü oluşturulduktan sonra sonraki turlar hızlıdır.",
