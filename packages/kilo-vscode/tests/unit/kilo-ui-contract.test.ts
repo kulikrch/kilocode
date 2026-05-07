@@ -118,6 +118,48 @@ describe("DataProvider contract (runtime)", () => {
     expect(src).toContain("OpenFileFn")
     expect(src).toMatch(/openFile:\s*props\.onOpenFile/)
   })
+
+  it("DataProvider accepts onOpenDiff prop and exports OpenDiffFn (source)", () => {
+    // onOpenDiff and OpenDiffFn are `kilocode_change` additions — TypeScript types
+    // erased at runtime, so we verify via source analysis
+    const src = fs.readFileSync(DATA_CONTEXT_FILE, "utf-8")
+    expect(src).toContain("onOpenDiff")
+    expect(src).toContain("OpenDiffFn")
+    expect(src).toMatch(/openDiff:\s*props\.onOpenDiff/)
+  })
+})
+
+describe("Edit tool diff-first click contract (source)", () => {
+  const src = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+
+  const editBlockMatch = src.match(/ToolRegistry\.register\(\{\s*name:\s*"edit"[\s\S]*?(?=ToolRegistry\.register\(|$)/)
+  const editBlock = editBlockMatch?.[0] ?? ""
+
+  it("edit tool derives before/after content from filediff or input", () => {
+    expect(editBlock).toContain("contents(diff)")
+    expect(editBlock).toMatch(/view\(\)\?\.before\s*\?\?.*filediff\?\.before\s*\?\?.*oldString/)
+    expect(editBlock).toMatch(/view\(\)\?\.after\s*\?\?.*filediff\?\.after\s*\?\?.*newString/)
+  })
+})
+
+describe("Write and apply_patch patch rendering contracts (source)", () => {
+  const src = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+  const writeBlock =
+    src.match(/ToolRegistry\.register\(\{\s*name:\s*"write"[\s\S]*?(?=ToolRegistry\.register\(|$)/)?.[0] ?? ""
+  const patchBlock =
+    src.match(/ToolRegistry\.register\(\{\s*name:\s*"apply_patch"[\s\S]*?(?=ToolRegistry\.register\(|$)/)?.[0] ?? ""
+
+  it("write tool can render from filediff.patch when input.content is stripped", () => {
+    expect(writeBlock).toContain("contents(diff)")
+    expect(writeBlock).toContain("props.input.content || view()")
+    expect(writeBlock).toContain('mode="diff"')
+  })
+
+  it("apply_patch tool can render from patch metadata without before/after", () => {
+    expect(patchBlock).toContain("file.patch")
+    expect(patchBlock).toContain("contents({ file: file.relativePath, patch: file.patch")
+    expect(patchBlock).toContain('mode="diff"')
+  })
 })
 
 describe("BasicTool export contract (runtime)", () => {
