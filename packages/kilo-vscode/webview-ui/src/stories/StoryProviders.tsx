@@ -244,15 +244,30 @@ interface StoryProvidersProps {
 /** Wraps children with either a mock ConfigContext (when config prop is given) or the real ConfigProvider. */
 const ConfigWrapper: ParentComponent<{ config?: Config }> = (props) => {
   if (props.config) {
+    const [cfg, setCfg] = createSignal(props.config)
+    const [settings, setSettings] = createSignal<Record<string, unknown>>({})
+    const [dirty, setDirty] = createSignal(false)
+
     const value = {
-      config: () => props.config!,
+      config: () => cfg(),
+      settings,
       loading: () => false,
-      isDirty: () => false,
+      isDirty: dirty,
       saving: () => false,
       saveError: () => null,
-      updateConfig: noop,
-      saveConfig: noop,
-      discardConfig: noop,
+      updateConfig: (partial: Partial<Config>) => {
+        setCfg((prev) => {
+          const next = { ...prev, ...partial } as Config
+          return next
+        })
+        setDirty(true)
+      },
+      updateSetting: (key: string, value: unknown) => {
+        setSettings((prev) => ({ ...prev, [key]: value }))
+        setDirty(true)
+      },
+      saveConfig: () => setDirty(false),
+      discardConfig: () => setDirty(false),
     }
     return <ConfigContext.Provider value={value}>{props.children}</ConfigContext.Provider>
   }
