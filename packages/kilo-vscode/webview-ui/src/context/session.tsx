@@ -49,6 +49,7 @@ import { resolveSessionAgent } from "./session-agent"
 import { errorIDs } from "./session-errors"
 import { PartStash } from "./part-stash"
 import { KILO_AUTO, parseModelString } from "../../../src/shared/provider-model"
+import { visibleMessages as filterVisibleMessages } from "./session-queue"
 
 const RECENT_LIMIT = 5
 const MESSAGE_PAGE_LIMIT = 80
@@ -106,6 +107,9 @@ interface SessionContextValue {
 
   // Messages for current session
   messages: Accessor<Message[]>
+
+  // Messages for current session with soft-reverted turns hidden
+  visibleMessages: Accessor<Message[]>
 
   // User messages for current session (role === "user")
   userMessages: Accessor<Message[]>
@@ -1330,13 +1334,12 @@ export const SessionProvider: ParentComponent = (props) => {
    * family tree (self + subagents + sub-subagents). Reads directly from the
    * store so it's reactive — automatically updates when new parts arrive.
    */
-  function sessionFamily(rootID: string): Set<string> {
-    const family = new Set<string>([rootID])
+  function sessionIDs(rootID: string, source: (sessionID: string) => Message[]): Set<string> {
+    const ids = new Set<string>([rootID])
     const queue = [rootID]
     while (queue.length > 0) {
       const sid = queue.pop()!
-      const msgs = store.messages[sid]
-      if (!msgs) continue
+      const msgs = source(sid)
       for (const msg of msgs) {
         const parts = store.parts[msg.id]
         if (!parts) continue
@@ -1351,14 +1354,22 @@ export const SessionProvider: ParentComponent = (props) => {
               state?: { metadata?: { sessionId?: string } }
             },
           )
-          if (child && !family.has(child)) {
-            family.add(child)
+          if (child && !ids.has(child)) {
+            ids.add(child)
             queue.push(child)
           }
         }
       }
     }
-    return family
+    return ids
+  }
+
+  function sessionFamily(rootID: string): Set<string> {
+    return sessionIDs(rootID, (sid) => store.messages[sid] ?? [])
+  }
+
+  function visibleFamily(rootID: string): Set<string> {
+    return sessionIDs(rootID, visible)
   }
 
   /** Return permissions scoped to the given session's family (self + subagents). */
@@ -2060,10 +2071,19 @@ export const SessionProvider: ParentComponent = (props) => {
 
   const userMessages = createMemo(() => messages().filter((m) => m.role === "user"))
 
+  function visible(sessionID: string) {
+    return filterVisibleMessages(store.messages[sessionID] ?? [], store.sessions[sessionID]?.revert?.messageID)
+  }
+
   const revert = createMemo(() => {
     const id = currentSessionID()
     // revert can be null (cleared by unrevert) or undefined (never set) — treat both as "no revert"
     return id ? (store.sessions[id]?.revert ?? undefined) : undefined
+  })
+
+  const visibleMessages = createMemo(() => {
+    const id = currentSessionID()
+    return id ? visible(id) : []
   })
 
   const revertedCount = createMemo(() => {
@@ -2120,14 +2140,20 @@ export const SessionProvider: ParentComponent = (props) => {
   const familyCosts = createMemo<Map<string, number>>(() => {
     const id = currentSessionID()
     if (!id) return new Map()
-    return buildFamilyCosts(sessionFamily(id), store.messages)
+    const family = visibleFamily(id)
+    const msgs: Record<string, Message[]> = {}
+    for (const sid of family) msgs[sid] = visible(sid)
+    return buildFamilyCosts(family, msgs)
   })
 
   /** Child session labels — only reads store.parts (not message costs). */
   const familyLabels = createMemo<Map<string, string>>(() => {
     const id = currentSessionID()
     if (!id) return new Map()
-    return buildFamilyLabels(sessionFamily(id), store.messages as any, store.parts as any)
+    const family = visibleFamily(id)
+    const msgs: Record<string, Message[]> = {}
+    for (const sid of family) msgs[sid] = visible(sid)
+    return buildFamilyLabels(family, msgs, store.parts)
   })
 
   /** Combined cost breakdown with labels. */
@@ -2164,7 +2190,7 @@ export const SessionProvider: ParentComponent = (props) => {
   })
 
   const contextUsage = createMemo<ContextUsage | undefined>(() => {
-    const msgs = messages()
+    const msgs = visibleMessages()
     for (let i = msgs.length - 1; i >= 0; i--) {
       const m = msgs[i]
       if (m.role !== "assistant" || !m.tokens) continue
@@ -2192,6 +2218,7 @@ export const SessionProvider: ParentComponent = (props) => {
     hasOlderMessages,
     messageMutation,
     messages,
+    visibleMessages,
     userMessages,
     getParts,
     isErrorHidden: (messageID: string) => hiddenErrors().has(messageID),
