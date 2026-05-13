@@ -48,6 +48,7 @@ import { resolveModelSelection } from "./model-selection"
 import { resolveSessionAgent } from "./session-agent"
 import { errorIDs } from "./session-errors"
 import { PartStash } from "./part-stash"
+import { state as todoState } from "./todo-revert"
 import { KILO_AUTO, parseModelString } from "../../../src/shared/provider-model"
 import { visibleMessages as filterVisibleMessages } from "./session-queue"
 
@@ -205,7 +206,7 @@ interface SessionContextValue {
   worktreeStats: Accessor<{ files: number; additions: number; deletions: number } | undefined>
 
   // Actions
-  revertSession: (messageID: string) => void
+  revertSession: (messageID: string, partID?: string) => void
   unrevertSession: () => void
   sendMessage: (text: string, providerID?: string, modelID?: string, files?: FileAttachment[], draftID?: string) => void
   sendCommand: (
@@ -813,7 +814,7 @@ export const SessionProvider: ParentComponent = (props) => {
         break
 
       case "sessionUpdated":
-        setStore("sessions", message.session.id, message.session)
+        handleSessionUpdated(message.session)
         break
 
       case "sessionDeleted":
@@ -1039,6 +1040,8 @@ export const SessionProvider: ParentComponent = (props) => {
       if (agent) {
         setStore("agentSelections", sessionID, agent)
       }
+      const revert = store.sessions[sessionID]?.revert ?? undefined
+      if (revert) resetTodos(sessionID, revert)
     })
     if (reset) requestAnimationFrame(() => patchPage(sessionID, { lastMutation: undefined }))
   }
@@ -1394,6 +1397,23 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function handleTodoUpdated(sessionID: string, items: TodoItem[]) {
     setStore("todos", sessionID, items)
+  }
+
+  function resetTodos(sessionID: string, revert?: NonNullable<SessionInfo["revert"]>) {
+    const items = todoState({
+      messages: store.messages[sessionID] ?? [],
+      parts: (messageID) => store.parts[messageID] ?? stash.peek(messageID),
+      revert,
+    })
+    setStore("todos", sessionID, items)
+  }
+
+  function handleSessionUpdated(session: SessionInfo) {
+    const prev = store.sessions[session.id]?.revert
+    const next = session.revert ?? undefined
+    setStore("sessions", session.id, session)
+    if (prev?.messageID === next?.messageID && prev?.partID === next?.partID) return
+    resetTodos(session.id, next)
   }
 
   function handleSessionsLoaded(loaded: SessionInfo[], preserve?: string[]) {
@@ -2097,7 +2117,7 @@ export const SessionProvider: ParentComponent = (props) => {
     return id ? (store.sessions[id]?.summary ?? undefined) : undefined
   })
 
-  function revertSession(messageID: string) {
+  function revertSession(messageID: string, partID?: string) {
     const id = currentSessionID()
     if (!id) return
     // Restore the reverted user message's prompt text into the input.
@@ -2110,7 +2130,7 @@ export const SessionProvider: ParentComponent = (props) => {
         .join("")
       if (text) window.postMessage({ type: "setChatBoxMessage", text }, "*")
     }
-    vscode.postMessage({ type: "revertSession", sessionID: id, messageID })
+    vscode.postMessage({ type: "revertSession", sessionID: id, messageID, partID })
   }
 
   function unrevertSession() {
