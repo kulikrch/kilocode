@@ -2,7 +2,8 @@ import * as vscode from "vscode"
 import type { KiloConnectionService } from "./services/cli-backend"
 import { buildWebviewHtml } from "./utils"
 import { GitOps } from "./agent-manager/GitOps"
-import { WorktreeDiffClient, type DiffTarget } from "./worktree-diff-client"
+import { diffFile } from "./agent-manager/local-diff"
+import { WorktreeDiffReverter, type DiffTarget, type StatusResolver } from "./worktree-diff-client"
 import {
   appendOutput,
   getWorkspaceRoot,
@@ -131,9 +132,13 @@ export class DiffViewerProvider implements vscode.Disposable {
     }
 
     try {
-      const diff = new WorktreeDiffClient(this.connectionService.getClient(), this.gitOps, (...args) =>
-        this.log(...args),
-      )
+      const status: StatusResolver = async (current, item) => {
+        const diff = await diffFile(this.gitOps, current.directory, current.baseBranch, item, (...args) =>
+          this.log(...args),
+        )
+        return diff?.status
+      }
+      const diff = new WorktreeDiffReverter(this.gitOps, status, (...args) => this.log(...args))
       const result = await diff.revertFile(target, file)
       this.post({
         type: "diffViewer.revertFileResult",

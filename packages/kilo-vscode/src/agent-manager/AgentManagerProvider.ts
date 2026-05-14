@@ -114,7 +114,6 @@ export class AgentManagerProvider implements Disposable {
       getState: () => this.getStateManager(),
       getRoot: () => this.getRoot(),
       getStateReady: () => this.stateReady,
-      getClient: () => this.connectionService.getClient(),
       git: this.gitOps,
       localDiff: (dir, base) => localDiffSummary(this.gitOps, dir, base, (...args) => this.log(...args)),
       localDiffFile: (dir, base, file) => localDiffFile(this.gitOps, dir, base, file, (...args) => this.log(...args)),

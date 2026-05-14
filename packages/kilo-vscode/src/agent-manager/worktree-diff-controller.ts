@@ -1,6 +1,5 @@
-import type { KiloClient } from "@kilocode/sdk/v2/client"
 import { hashFileDiffs, resolveLocalDiffTarget } from "../review-utils"
-import { WorktreeDiffClient } from "../worktree-diff-client"
+import { WorktreeDiffReverter, type StatusResolver } from "../worktree-diff-client"
 import type { ApplyConflict, GitOps } from "./GitOps"
 import { shouldStopDiffPolling } from "./delete-worktree"
 import { remoteRef, type ManagedSession, type WorktreeStateManager } from "./WorktreeStateManager"
@@ -15,12 +14,9 @@ export interface WorktreeDiffControllerContext {
   getRoot: () => string | undefined
   getStateReady: () => Promise<void> | undefined
   /**
-   * SDK client — used by `revert()` via `WorktreeDiffClient` for the one-shot
-   * file-status lookup. Hot polling paths (`request`, `requestFile`, `poll`)
-   * deliberately bypass the client and go through `localDiff`/`localDiffFile`
-   * to keep git spawns out of the Bun `kilo serve` process (see oven-sh/bun#18265).
+   * In-process diff paths deliberately bypass the SDK client to keep git spawns
+   * out of the Bun `kilo serve` process (see oven-sh/bun#18265).
    */
-  getClient: () => KiloClient
   git: GitOps
   /** In-process diff summary (replaces client.worktree.diffSummary). */
   localDiff: (dir: string, base: string) => Promise<WorktreeDiffEntry[]>
@@ -121,7 +117,11 @@ export class WorktreeDiffController {
     }
 
     try {
-      const diff = new WorktreeDiffClient(this.ctx.getClient(), this.ctx.git, (...args) => this.ctx.log(...args))
+      const status: StatusResolver = async (current, item) => {
+        const diff = await this.ctx.localDiffFile(current.directory, current.baseBranch, item)
+        return diff?.status
+      }
+      const diff = new WorktreeDiffReverter(this.ctx.git, status, (...args) => this.ctx.log(...args))
       const result = await diff.revertFile(target, file)
       this.ctx.post({
         type: "agentManager.revertWorktreeFileResult",
