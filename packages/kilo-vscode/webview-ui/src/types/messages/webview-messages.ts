@@ -264,6 +264,11 @@ export interface RenameSessionRequest {
   title: string
 }
 
+export interface ExportSessionTranscriptRequest {
+  type: "exportSessionTranscript"
+  sessionID: string
+}
+
 export interface RequestAutocompleteSettingsMessage {
   type: "requestAutocompleteSettings"
 }
@@ -925,6 +930,7 @@ export type WebviewMessage =
   | SuggestionDismissRequest
   | DeleteSessionRequest
   | RenameSessionRequest
+  | ExportSessionTranscriptRequest
   | RequestAutocompleteSettingsMessage
   | UpdateAutocompleteSettingMessage
   | RequestChatCompletionMessage
