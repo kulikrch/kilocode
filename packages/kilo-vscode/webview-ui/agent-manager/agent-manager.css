@@ -1722,6 +1722,11 @@ body.am-wt-dragging-active * {
   gap: 6px;
 }
 
+.am-annotation-speech {
+  display: flex;
+  align-items: center;
+}
+
 .am-annotation-btn {
   padding: 2px 10px;
   font-size: inherit;
