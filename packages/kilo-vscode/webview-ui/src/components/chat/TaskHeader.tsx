@@ -8,7 +8,7 @@
  * session activity) and a context window progress bar.
  */
 
-import { Component, For, Show, createMemo, createSignal, onMount, onCleanup } from "solid-js"
+import { Component, For, Show, createMemo, createSignal, createEffect, onMount, onCleanup } from "solid-js"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { Icon } from "@kilocode/kilo-ui/icon"
@@ -19,6 +19,7 @@ import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
 import { TaskTimeline } from "./TaskTimeline"
 import { ContextProgress } from "./ContextProgress"
+import { SessionRenameEditor } from "../shared/SessionRenameEditor"
 import type { TodoItem, ExtensionMessage } from "../../types/messages"
 
 interface TaskHeaderProps {
@@ -30,6 +31,7 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
   const language = useLanguage()
 
   const title = createMemo(() => session.currentSession()?.title ?? language.t("command.session.new"))
+  const canRename = createMemo(() => !props.readonly && !!session.currentSession())
   const hasMessages = createMemo(() => session.messages().length > 0)
   const busy = createMemo(() => session.status() === "busy")
   const canCompact = createMemo(() => !busy() && hasMessages() && !!session.selected())
@@ -116,12 +118,63 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
   })
 
   const [todosOpen, setTodosOpen] = createSignal(false)
+  const [renaming, setRenaming] = createSignal<{ id: string; title: string }>()
+
+  const startRename = () => {
+    if (props.readonly) return
+    const info = session.currentSession()
+    if (!info) return
+    setRenaming({ id: info.id, title: info.title ?? "" })
+  }
+
+  const commitRename = (title: string) => {
+    const info = renaming()
+    if (!info) return
+    setRenaming(undefined)
+    if (title === info.title) return
+    session.renameSession(info.id, title)
+  }
+
+  const cancelRename = () => {
+    setRenaming(undefined)
+  }
+
+  createEffect(() => {
+    const info = renaming()
+    if (info && session.currentSession()?.id !== info.id) setRenaming(undefined)
+  })
 
   return (
     <Show when={hasMessages()}>
       <div data-component="task-header">
-        <div data-slot="task-header-title" title={title()}>
-          {title()}
+        <div data-slot="task-header-title">
+          <Show
+            when={!renaming()}
+            fallback={
+              <SessionRenameEditor
+                title={renaming()?.title ?? ""}
+                autosize
+                onSave={commitRename}
+                onCancel={cancelRename}
+              />
+            }
+          >
+            <span
+              data-slot="task-header-title-trigger"
+              data-renamable={canRename() ? "" : undefined}
+              title={canRename() ? language.t("agentManager.worktree.doubleClickRename") : title()}
+              tabIndex={canRename() ? 0 : undefined}
+              role={canRename() ? "button" : undefined}
+              onDblClick={startRename}
+              onKeyDown={(e) => {
+                if (!canRename() || (e.key !== "Enter" && e.key !== " ")) return
+                e.preventDefault()
+                startRename()
+              }}
+            >
+              <span data-slot="task-header-title-label">{title()}</span>
+            </span>
+          </Show>
         </div>
         <div data-slot="task-header-stats">
           <Show when={cost()}>
