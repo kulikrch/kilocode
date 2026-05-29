@@ -3765,6 +3765,10 @@
                   "variant": {
                     "type": "string"
                   },
+                  "snapshotInitialization": {
+                    "type": "string",
+                    "enum": ["wait"]
+                  },
                   "editorContext": {
                     "type": "object",
                     "properties": {
@@ -4272,6 +4276,10 @@
                   "variant": {
                     "type": "string"
                   },
+                  "snapshotInitialization": {
+                    "type": "string",
+                    "enum": ["wait"]
+                  },
                   "editorContext": {
                     "type": "object",
                     "properties": {
@@ -4426,6 +4434,10 @@
                   },
                   "variant": {
                     "type": "string"
+                  },
+                  "snapshotInitialization": {
+                    "type": "string",
+                    "enum": ["wait"]
                   },
                   "parts": {
                     "type": "array",

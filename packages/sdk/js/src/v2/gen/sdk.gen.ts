@@ -2401,6 +2401,7 @@ export class Session2 extends HeyApiClient {
       format?: OutputFormat
       system?: string
       variant?: string
+      snapshotInitialization?: "wait"
       editorContext?: {
         visibleFiles?: Array<string>
         openTabs?: Array<string>
@@ -2427,6 +2428,7 @@ export class Session2 extends HeyApiClient {
             { in: "body", key: "format" },
             { in: "body", key: "system" },
             { in: "body", key: "variant" },
+            { in: "body", key: "snapshotInitialization" },
             { in: "body", key: "editorContext" },
             { in: "body", key: "parts" },
           ],
@@ -2540,6 +2542,7 @@ export class Session2 extends HeyApiClient {
       format?: OutputFormat
       system?: string
       variant?: string
+      snapshotInitialization?: "wait"
       editorContext?: {
         visibleFiles?: Array<string>
         openTabs?: Array<string>
@@ -2566,6 +2569,7 @@ export class Session2 extends HeyApiClient {
             { in: "body", key: "format" },
             { in: "body", key: "system" },
             { in: "body", key: "variant" },
+            { in: "body", key: "snapshotInitialization" },
             { in: "body", key: "editorContext" },
             { in: "body", key: "parts" },
           ],
@@ -2600,6 +2604,7 @@ export class Session2 extends HeyApiClient {
       arguments?: string
       command?: string
       variant?: string
+      snapshotInitialization?: "wait"
       parts?: Array<{
         id?: string
         type: "file"
@@ -2625,6 +2630,7 @@ export class Session2 extends HeyApiClient {
             { in: "body", key: "arguments" },
             { in: "body", key: "command" },
             { in: "body", key: "variant" },
+            { in: "body", key: "snapshotInitialization" },
             { in: "body", key: "parts" },
           ],
         },

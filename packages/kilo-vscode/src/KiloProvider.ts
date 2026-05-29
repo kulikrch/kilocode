@@ -119,7 +119,9 @@ import type { Agent } from "@kilocode/sdk/v2/client"
 
 type KiloProviderOptions = {
   projectDirectory?: string | null
+  platform?: string
   slimEditMetadata?: boolean
+  snapshotInitialization?: "wait"
 }
 
 type MessageLoadMode = "replace" | "prepend" | "focus" | "reconcile"
@@ -222,6 +224,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private marketplace: MarketplaceService | null = null
   private chatAutocomplete: ChatTextAreaAutocomplete | null = null
   private projectDirectory: string | null | undefined
+  private snapshotInitialization: "wait" | undefined
   private slimEditMetadata = true
 
   private pendingFollowup: Followup | null = null
@@ -252,6 +255,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     options?: KiloProviderOptions,
   ) {
     this.projectDirectory = options?.projectDirectory
+    this.snapshotInitialization = options?.snapshotInitialization
     this.slimEditMetadata = options?.slimEditMetadata ?? true
 
     TelemetryProxy.getInstance().setProvider(this)
@@ -2457,6 +2461,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
               agent,
               variant,
               editorContext,
+              snapshotInitialization: this.snapshotInitialization,
             }),
           sid,
           messageID,
@@ -2532,6 +2537,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
               agent,
               variant,
               parts,
+              snapshotInitialization: this.snapshotInitialization,
             }),
           sid,
           messageID,

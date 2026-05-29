@@ -1313,7 +1313,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         return yield* KiloSessionPromptQueue.enqueue(
           input.sessionID,
           message.info.id,
-          loop({ sessionID: input.sessionID }),
+          loop({ sessionID: input.sessionID, snapshotInitialization: input.snapshotInitialization }), // kilocode_change
           lastAssistant(input.sessionID),
         )
         // kilocode_change end
@@ -1337,8 +1337,11 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     // kilocode_change — mutable close-reason per session, set by runLoop and read by loop
     const closeReasons = new Map<string, KiloSession.CloseReason>()
 
-    const runLoop: (sessionID: SessionID) => Effect.Effect<MessageV2.WithParts> = Effect.fn("SessionPrompt.run")(
-      function* (sessionID: SessionID) {
+    // kilocode_change start - retain request-scoped snapshot initialization policy
+    const runLoop: (input: z.infer<typeof LoopInput>) => Effect.Effect<MessageV2.WithParts> = Effect.fn("SessionPrompt.run")(
+      function* (input: z.infer<typeof LoopInput>) {
+        const sessionID = input.sessionID
+        // kilocode_change end
         // kilocode_change — cache environment details per turn (prompt caching)
         const envCache: KiloSessionPrompt.EnvCache = {}
         closeReasons.delete(sessionID) // kilocode_change
@@ -1491,6 +1494,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
             assistantMessage: msg,
             sessionID,
             model,
+            snapshotInitialization: input.snapshotInitialization, // kilocode_change
           })
 
           const outcome: "break" | "continue" = yield* Effect.gen(function* () {
@@ -1638,7 +1642,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       // kilocode_change start
       yield* bus.publish(KiloSession.Event.TurnOpen, { sessionID: input.sessionID })
       return yield* Effect.onExit(
-        state.ensureRunning(input.sessionID, lastAssistant(input.sessionID), runLoop(input.sessionID)),
+        state.ensureRunning(input.sessionID, lastAssistant(input.sessionID), runLoop(input)), // kilocode_change
         Effect.fnUntraced(function* (exit) {
           yield* bus.publish(KiloSession.Event.TurnClose, {
             sessionID: input.sessionID,
@@ -1765,6 +1769,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         agent: userAgent,
         parts,
         variant: input.variant,
+        snapshotInitialization: input.snapshotInitialization, // kilocode_change
       })
       yield* bus.publish(Command.Event.Executed, {
         name: input.command,
@@ -1834,6 +1839,9 @@ export const PromptInput = z.object({
   format: MessageV2.Format.optional(),
   system: z.string().optional(),
   variant: z.string().optional(),
+  // kilocode_change start - managed product slow-snapshot policy
+  snapshotInitialization: z.literal("wait").optional().describe("Wait silently if snapshot initialization is slow instead of asking the user."),
+  // kilocode_change end
   // kilocode_change start
   editorContext: z
     .object({
@@ -1893,6 +1901,7 @@ export type PromptInput = z.infer<typeof PromptInput>
 
 export const LoopInput = z.object({
   sessionID: SessionID.zod,
+  snapshotInitialization: z.literal("wait").optional(), // kilocode_change
 })
 
 export const ShellInput = z.object({
@@ -1917,6 +1926,9 @@ export const CommandInput = z.object({
   arguments: z.string(),
   command: z.string(),
   variant: z.string().optional(),
+  // kilocode_change start - managed product slow-snapshot policy
+  snapshotInitialization: z.literal("wait").optional().describe("Wait silently if snapshot initialization is slow instead of asking the user."),
+  // kilocode_change end
   parts: z
     .array(
       z.discriminatedUnion("type", [

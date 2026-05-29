@@ -9,6 +9,7 @@ import * as vscode from "vscode"
 import type { Host, PanelContext, OutputHandle, SessionProvider, Disposable } from "./host"
 import type { KiloConnectionService } from "../services/cli-backend"
 import { KiloProvider } from "../KiloProvider"
+import { PLATFORM, SNAPSHOT_INITIALIZATION } from "./constants"
 import { DiffVirtualProvider } from "../DiffVirtualProvider"
 import { buildWebviewHtml } from "../utils"
 import { openFileInEditor, getWorkspaceRoot } from "../review-utils"
@@ -79,6 +80,8 @@ export class VscodeHost implements Host {
     })
 
     const provider = new KiloProvider(this.extensionUri, this.connectionService, this.context, {
+      platform: PLATFORM,
+      snapshotInitialization: SNAPSHOT_INITIALIZATION,
       slimEditMetadata: true,
     })
     if (this.diffVirtual) {

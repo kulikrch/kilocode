@@ -52,6 +52,7 @@ type Input = {
   assistantMessage: MessageV2.Assistant
   sessionID: SessionID
   model: Provider.Model
+  snapshotInitialization?: "wait" // kilocode_change - managed clients wait silently for slow baseline creation
 }
 
 export interface Interface {
@@ -112,10 +113,11 @@ export const layer: Layer.Layer<
       // Pre-capture snapshot before the LLM stream starts. The AI SDK
       // may execute tools internally before emitting start-step events,
       // so capturing inside the event handler can be too late.
-      // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
+      // kilocode_change start - pass turn context for slow-snapshot UI/policy handling
       const initialSnapshot = yield* snapshot.track({
         sessionID: input.sessionID,
         messageID: input.assistantMessage.id,
+        snapshotInitialization: input.snapshotInitialization,
       })
       // kilocode_change end
       const ctx: ProcessorContext = {
@@ -389,9 +391,13 @@ export const layer: Layer.Layer<
 
           case "start-step":
             ctx.stepStart = performance.now() // kilocode_change
-            // kilocode_change start - pass sessionID + messageID so the slow-repo prompt/progress indicator can attach
+            // kilocode_change start - pass turn context for slow-snapshot UI/policy handling
             if (!ctx.snapshot)
-              ctx.snapshot = yield* snapshot.track({ sessionID: ctx.sessionID, messageID: ctx.assistantMessage.id })
+              ctx.snapshot = yield* snapshot.track({
+                sessionID: ctx.sessionID,
+                messageID: ctx.assistantMessage.id,
+                snapshotInitialization: input.snapshotInitialization,
+              })
             // kilocode_change end
             yield* session.updatePart({
               id: PartID.ascending(),
@@ -403,6 +409,13 @@ export const layer: Layer.Layer<
             return
 
           case "finish-step": {
+            // kilocode_change start - pass turn context for slow-snapshot UI/policy handling
+            const completedSnapshot = yield* snapshot.track({
+              sessionID: ctx.sessionID,
+              messageID: ctx.assistantMessage.id,
+              snapshotInitialization: input.snapshotInitialization,
+            })
+            // kilocode_change end
             const usage = Session.getUsage({
               model: ctx.model,
               usage: value.usage,
@@ -425,12 +438,7 @@ export const layer: Layer.Layer<
             yield* session.updatePart({
               id: PartID.ascending(),
               reason: value.finishReason,
-              // kilocode_change start - pass sessionID + messageID
-              snapshot: yield* snapshot.track({
-                sessionID: ctx.sessionID,
-                messageID: ctx.assistantMessage.id,
-              }),
-              // kilocode_change end
+              snapshot: completedSnapshot,
               messageID: ctx.assistantMessage.id,
               sessionID: ctx.assistantMessage.sessionID,
               type: "step-finish",
