@@ -238,19 +238,19 @@ Custom themes: place JSON files in `~/.config/kilo/themes/` or `.kilo/themes/`.
 
 ### Session
 
-| Action             | Keybind     | Slash                    |
-| ------------------ | ----------- | ------------------------ |
-| List sessions      | `<leader>l` | `/sessions`              |
-| New session        | `<leader>n` | `/new`, `/clear`         |
-| Share session      | —           | `/share`                 |
-| Rename session     | `ctrl+r`    | `/rename`                |
-| Jump to message    | `<leader>g` | `/timeline`              |
-| Fork from message  | —           | `/fork`                  |
-| Compact/summarize  | `<leader>c` | `/compact`, `/summarize` |
-| Undo message       | `<leader>u` | `/undo`                  |
-| Redo               | `<leader>r` | `/redo`                  |
-| Copy last response | `<leader>y` | —                        |
-| Copy transcript    | —           | `/copy`                  |
+| Action | Keybind | Slash |
+|---|---|---|
+| List sessions | `<leader>l` | `/sessions` |
+| New session | `<leader>n` | `/new`, `/clear` |
+| Share session | — | `/share` |
+| Rename session | `ctrl+r` | `/rename` |
+| Jump to message | `<leader>g` | `/timeline` |
+| Fork from message | — | `/fork` |
+| Compact/summarize | `<leader>c` | `/compact`, `/summarize` |
+| Undo message | `<leader>u` | `/undo` |
+| Redo | `<leader>r` | `/redo` |
+| Copy last response | `<leader>y` | `/copy` |
+| Copy transcript | — | `/copy-session` |
 
 ### Agent & Model
 

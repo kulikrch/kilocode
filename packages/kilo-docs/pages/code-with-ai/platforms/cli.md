@@ -78,22 +78,23 @@ For detailed help on every command and subcommand, see the [CLI Command Referenc
 
 #### Session Commands
 
-| Command       | Aliases                | Description               |
-| ------------- | ---------------------- | ------------------------- |
-| `/sessions`   | `/resume`, `/continue` | Switch session            |
-| `/new`        | `/clear`               | New session               |
-| `/share`      | -                      | Share session             |
-| `/unshare`    | -                      | Unshare session           |
-| `/rename`     | -                      | Rename session            |
-| `/timeline`   | -                      | Jump to message           |
-| `/fork`       | -                      | Fork from message         |
-| `/compact`    | `/summarize`           | Compact/summarize session |
-| `/undo`       | -                      | Undo previous message     |
-| `/redo`       | -                      | Redo message              |
-| `/copy`       | -                      | Copy session transcript   |
-| `/export`     | -                      | Export session transcript |
-| `/timestamps` | `/toggle-timestamps`   | Show/hide timestamps      |
-| `/thinking`   | `/toggle-thinking`     | Show/hide thinking blocks |
+| Command | Aliases | Description |
+|---|---|---|
+| `/sessions` | `/resume`, `/continue` | Switch session |
+| `/new` | `/clear` | New session |
+| `/share` | - | Share session |
+| `/unshare` | - | Unshare session |
+| `/rename` | - | Rename session |
+| `/timeline` | - | Jump to message |
+| `/fork` | - | Fork from message |
+| `/compact` | `/summarize` | Compact/summarize session |
+| `/undo` | - | Undo previous message |
+| `/redo` | - | Redo message |
+| `/copy` | - | Copy latest agent response |
+| `/copy-session` | - | Copy session transcript |
+| `/export` | - | Export session transcript |
+| `/timestamps` | `/toggle-timestamps` | Show/hide timestamps |
+| `/thinking` | `/toggle-thinking` | Show/hide thinking blocks |
 
 #### Agent & Model Commands
 
