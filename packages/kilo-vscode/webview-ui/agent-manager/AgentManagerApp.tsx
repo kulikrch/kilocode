@@ -96,6 +96,7 @@ import { ApplyDialog } from "./ApplyDialog"
 import { groupApplyConflicts } from "./apply-conflicts"
 import type { ReviewComment } from "./review-comments"
 import { BranchSelect } from "./BranchSelect"
+import { clearReviewComposer, createReviewComposer } from "./review-annotations"
 import { WorktreeItem } from "./WorktreeItem"
 import SectionHeader from "./SectionHeader"
 import { randomColor } from "./section-colors"
@@ -367,6 +368,7 @@ const AgentManagerContent: Component = () => {
   // Full-screen review state (in-memory, per sidebar context: local/worktree)
   const [reviewOpenByContext, setReviewOpenByContext] = createSignal<Record<string, boolean>>({})
   const [reviewCommentsByContext, setReviewCommentsByContext] = createSignal<Record<string, ReviewComment[]>>({})
+  const reviewComposer = createReviewComposer()
   const [reviewActive, setReviewActive] = createSignal(false)
   const [reviewDiffStyle, setReviewDiffStyle] = createSignal<"unified" | "split">("unified")
   // reviewOpen (memo below) controls tab presence for selected context.
@@ -407,6 +409,7 @@ const AgentManagerContent: Component = () => {
     setPendingDelete(null)
   }
   createEffect(on(selection, () => cancelPendingDelete(), { defer: true }))
+  createEffect(on(selection, () => clearReviewComposer(reviewComposer), { defer: true }))
   onCleanup(() => clearTimeout(pendingDeleteTimer))
 
   // Per-context tab memory: maps sidebar selection key -> last active session/pending ID
@@ -3087,6 +3090,7 @@ const AgentManagerContent: Component = () => {
                         onDiffStyleChange={setSharedDiffStyle}
                         comments={reviewComments()}
                         onCommentsChange={setReviewCommentsForSelection}
+                        composer={reviewComposer}
                         onClose={() => setSidePanel(null)}
                         onExpand={selection() !== null ? openReviewTab : undefined}
                         onRequestDiff={requestDiffFile}
@@ -3115,6 +3119,7 @@ const AgentManagerContent: Component = () => {
                   sessionKey={diffSessionKey()}
                   comments={reviewComments()}
                   onCommentsChange={setReviewCommentsForSelection}
+                  composer={reviewComposer}
                   onSendAll={closeReviewTab}
                   diffStyle={reviewDiffStyle()}
                   onDiffStyleChange={setSharedDiffStyle}

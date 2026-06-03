@@ -24,10 +24,16 @@ import { getDirectory, getFilename, lineCount, sanitizeReviewComments, type Revi
 import {
   buildFileAnnotations,
   buildReviewAnnotation,
+  clearReviewComposer,
+  createReviewComposer,
+  reviewComposerDraft,
+  reviewComposerEdit,
   reviewDraftSpeechKey,
   reviewEditSpeechKey,
   type AnnotationLabels,
   type AnnotationMeta,
+  type ReviewComposer,
+  type ReviewDraft,
 } from "./review-annotations"
 import { createReviewAnnotationSpeechRenderer } from "./review-annotation-speech"
 import {
@@ -50,6 +56,7 @@ interface DiffPanelProps {
   onDiffStyleChange?: (style: "unified" | "split") => void
   comments: ReviewComment[]
   onCommentsChange: (comments: ReviewComment[]) => void
+  composer?: ReviewComposer
   onSendAll?: () => void
   onClose: () => void
   onExpand?: () => void
@@ -82,9 +89,11 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     edit: t("common.edit"),
     delete: t("common.delete"),
   })
+  const localComposer = createReviewComposer()
+  const composer = () => props.composer ?? localComposer
   const [open, setOpen] = createSignal<string[]>([])
-  const [draft, setDraft] = createSignal<{ file: string; side: AnnotationSide; line: number } | null>(null)
-  const [editing, setEditing] = createSignal<string | null>(null)
+  const [draft, setDraft] = createSignal<ReviewDraft | null>(reviewComposerDraft(composer()))
+  const [editing, setEditing] = createSignal<string | null>(reviewComposerEdit(composer()))
   const speechKeys = createMemo(() => {
     const keys = new Set<string>()
     const current = draft()
@@ -114,9 +123,10 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   const setComments = (next: ReviewComment[]) => props.onCommentsChange(next)
   const updateComments = (updater: (prev: ReviewComment[]) => ReviewComment[]) => setComments(updater(comments()))
 
-  // Stable draft metadata ref — avoids recreating the object on every signal read
-  // so pierre's annotation cache doesn't invalidate and destroy the textarea
-  let draftMeta: AnnotationMeta | null = null
+  // Stable composer metadata refs avoid recreating the object on every signal read
+  // so pierre's annotation cache doesn't invalidate and destroy the textarea.
+  let draftMeta: AnnotationMeta | null = composer().draft
+  let editMeta: AnnotationMeta | null = composer().edit
 
   // Ref to the scrollable container — used to preserve scroll position when
   // annotation changes cause pierre to fully re-render diffs
@@ -158,6 +168,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     preserveScroll(() => {
       setDraft(null)
       draftMeta = null
+      composer().draft = null
     })
     focusRoot()
   }
@@ -198,6 +209,20 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
 
   createEffect(
     on(
+      () => props.sessionKey,
+      () => {
+        setDraft(null)
+        draftMeta = null
+        setEditing(null)
+        editMeta = null
+        clearReviewComposer(composer())
+      },
+      { defer: true },
+    ),
+  )
+
+  createEffect(
+    on(
       () => [open(), props.diffs] as const,
       ([next]) => {
         const loading = props.loadingFiles ?? new Set<string>()
@@ -220,6 +245,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
       updateComments((prev) => [...prev, { id, file, side, line, comment: text, selectedText }])
       setDraft(null)
       draftMeta = null
+      composer().draft = null
     })
     focusRoot()
   }
@@ -228,6 +254,8 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     preserveScroll(() => {
       updateComments((prev) => prev.map((c) => (c.id === id ? { ...c, comment: text } : c)))
       setEditing(null)
+      editMeta = null
+      composer().edit = null
     })
     focusRoot()
   }
@@ -235,12 +263,20 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   const deleteComment = (id: string) => {
     preserveScroll(() => {
       updateComments((prev) => prev.filter((c) => c.id !== id))
-      if (editing() === id) setEditing(null)
+      if (editing() === id) {
+        setEditing(null)
+        editMeta = null
+        composer().edit = null
+      }
     })
     focusRoot()
   }
 
   const setEditState = (id: string | null) => {
+    if (editing() !== id) {
+      editMeta = null
+      composer().edit = null
+    }
     preserveScroll(() => setEditing(id))
     if (id === null) focusRoot()
   }
@@ -257,6 +293,8 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
         const edit = editing()
         if (edit && !valid.some((comment) => comment.id === edit)) {
           setEditing(null)
+          editMeta = null
+          composer().edit = null
         }
 
         const currentDraft = draft()
@@ -265,6 +303,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
         if (!diff) {
           setDraft(null)
           draftMeta = null
+          composer().draft = null
           return
         }
         const content = currentDraft.side === "deletions" ? diff.before : diff.after
@@ -272,6 +311,13 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
         if (currentDraft.line < 1 || currentDraft.line > max) {
           setDraft(null)
           draftMeta = null
+          composer().draft = null
+          return
+        }
+        if (currentDraft.endLine !== undefined && currentDraft.endLine > max) {
+          setDraft(null)
+          draftMeta = null
+          composer().draft = null
         }
       },
     ),
@@ -290,8 +336,11 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   })
 
   const annotationsForFile = (file: string): DiffLineAnnotation<AnnotationMeta>[] => {
-    const result = buildFileAnnotations(file, commentsByFile().get(file) ?? [], editing(), draft(), draftMeta)
+    const result = buildFileAnnotations(file, commentsByFile().get(file) ?? [], editing(), draft(), draftMeta, editMeta)
     draftMeta = result.draftMeta
+    editMeta = result.editMeta
+    composer().draft = draft() ? draftMeta : null
+    composer().edit = editing() ? editMeta : null
     return result.annotations
   }
 
@@ -321,7 +370,10 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     if (draft()) return
     const side: AnnotationSide = range.side === "deletions" ? "deletions" : "additions"
     preserveScroll(() => {
-      setDraft({ file, side, line: range.start })
+      const next = { file, side, line: range.start, endLine: range.end }
+      draftMeta = { type: "draft", comment: null, ...next }
+      composer().draft = draftMeta
+      setDraft(next)
     })
   }
 
