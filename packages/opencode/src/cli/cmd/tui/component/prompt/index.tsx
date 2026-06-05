@@ -42,6 +42,7 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceCreate, restoreWorkspaceSession } from "../dialog-workspace-create"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "@tui/context/args"
+import { slashMatches } from "@/kilocode/cli/cmd/command-display" // kilocode_change
 
 export type PromptProps = {
   sessionID?: string
@@ -748,7 +749,7 @@ export function Prompt(props: PromptProps) {
       iife(() => {
         const firstLine = inputText.split("\n")[0]
         const command = firstLine.split(" ")[0].slice(1)
-        return sync.data.command.some((x) => x.name === command)
+        return sync.data.command.some((x) => slashMatches(x, command)) // kilocode_change
       })
     ) {
       // Parse command from first line, preserve multi-line content in arguments
