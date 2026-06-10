@@ -12,6 +12,7 @@ import { Log } from "../util"
 import { Flag } from "@/flag/flag" // kilocode_change
 import { DiffFull } from "../kilocode/snapshot/diff-full" // kilocode_change
 import { KiloSnapshotTrack } from "../kilocode/snapshot/track" // kilocode_change
+import { KiloSnapshotSeed } from "../kilocode/snapshot/seed" // kilocode_change
 import type { MessageID, SessionID } from "../session/schema" // kilocode_change
 import { withStatics } from "@/util/schema"
 import { zod } from "@/util/effect-zod"
@@ -58,7 +59,12 @@ const cache = new Map<string, Promise<FileDiff[]>>()
 const max = 100
 // kilocode_change end
 
-type State = Omit<Interface, "init"> & { readonly trackState: KiloSnapshotTrack.State } // kilocode_change
+// kilocode_change start - internal state carries directory-scoped slow-track guard and accepts seed options
+type State = Omit<Interface, "init" | "track"> & {
+  readonly track: (opts?: Parameters<Interface["track"]>[0]) => Effect.Effect<string | undefined, never, unknown>
+  readonly trackState: KiloSnapshotTrack.State
+}
+// kilocode_change end
 
 export interface Interface {
   readonly init: () => Effect.Effect<void>
@@ -315,7 +321,7 @@ export const layer: Layer.Layer<
           )
         })
 
-        const track = Effect.fnUntraced(function* () {
+        const track = Effect.fnUntraced(function* (opts?: Parameters<Interface["track"]>[0]) {
           return yield* locked(
             Effect.gen(function* () {
               if (!(yield* enabled())) return
@@ -329,6 +335,18 @@ export const layer: Layer.Layer<
                 yield* git(["--git-dir", state.gitdir, "config", "core.longpaths", "true"])
                 yield* git(["--git-dir", state.gitdir, "config", "core.symlinks", "true"])
                 yield* git(["--git-dir", state.gitdir, "config", "core.fsmonitor", "false"])
+                // kilocode_change start - seed new Agent Manager snapshots from the worktree index
+                if (opts?.snapshotInitialization === "wait") {
+                  yield* KiloSnapshotSeed.seed({
+                    dir: state.directory,
+                    worktree: state.worktree,
+                    gitdir: state.gitdir,
+                    limit,
+                    git,
+                    fs,
+                  })
+                }
+                // kilocode_change end
                 log.info("initialized")
               }
               yield* add()
@@ -804,7 +822,7 @@ export const layer: Layer.Layer<
       track: Effect.fn("Snapshot.track")(function* (opts) {
         return yield* InstanceState.useEffect(state, (s) =>
           KiloSnapshotTrack.wrap({
-            inner: s.track(),
+            inner: s.track(opts) as Effect.Effect<string | undefined>,
             state: s.trackState,
             snapshotInitialization: opts?.snapshotInitialization,
             sessionID: opts?.sessionID,
