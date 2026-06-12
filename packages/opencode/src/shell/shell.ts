@@ -1,4 +1,5 @@
 import { Flag } from "@/flag/flag"
+import * as PowerShell from "@/kilocode/shell/shell" // kilocode_change - encoded PowerShell args
 import { lazy } from "@/util/lazy"
 import { Filesystem } from "@/util"
 import { which } from "@/util/which"
@@ -11,6 +12,7 @@ const SIGKILL_TIMEOUT_MS = 200
 const BLACKLIST = new Set(["fish", "nu"])
 const LOGIN = new Set(["bash", "dash", "fish", "ksh", "sh", "zsh"])
 const POSIX = new Set(["bash", "dash", "ksh", "sh", "zsh"])
+const PS = new Set(["powershell", "pwsh"])
 
 export async function killTree(proc: ChildProcess, opts?: { exited?: () => boolean }): Promise<void> {
   const pid = proc.pid
@@ -101,6 +103,46 @@ export function login(file: string) {
 
 export function posix(file: string) {
   return POSIX.has(name(file))
+}
+
+export function ps(file: string) {
+  return PS.has(name(file))
+}
+
+export function args(file: string, command: string, cwd: string) {
+  const n = name(file)
+  if (n === "nu" || n === "fish") return ["-c", command]
+  if (n === "zsh") {
+    return [
+      "-l",
+      "-c",
+      `
+        [[ -f ~/.zshenv ]] && source ~/.zshenv >/dev/null 2>&1 || true
+        [[ -f "\${ZDOTDIR:-$HOME}/.zshrc" ]] && source "\${ZDOTDIR:-$HOME}/.zshrc" >/dev/null 2>&1 || true
+        cd -- "$1"
+        eval ${JSON.stringify(command)}
+      `,
+      "kilo",
+      cwd,
+    ]
+  }
+  if (n === "bash") {
+    return [
+      "-l",
+      "-c",
+      `
+        shopt -s expand_aliases
+        [[ -f ~/.bashrc ]] && source ~/.bashrc >/dev/null 2>&1 || true
+        cd -- "$1"
+        eval ${JSON.stringify(command)}
+      `,
+      "kilo",
+      cwd,
+    ]
+  }
+  if (n === "cmd") return ["/c", command]
+  if (ps(file)) return PowerShell.args(command) // kilocode_change - encoded PowerShell args
+  return ["-c", command]
 }
 
 export const preferred = lazy(() => select(process.env.SHELL))
