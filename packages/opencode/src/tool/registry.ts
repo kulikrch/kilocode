@@ -2,7 +2,7 @@ import { PlanExitTool } from "./plan"
 import { Session } from "../session"
 import { QuestionTool } from "./question"
 import { SuggestTool } from "../kilocode/suggestion/tool" // kilocode_change
-import { BashTool } from "./bash"
+import { ShellTool } from "./shell"
 import { EditTool } from "./edit"
 import { GlobTool } from "./glob"
 import { GrepTool } from "./grep"
@@ -108,7 +108,7 @@ export const layer: Layer.Layer<
     const plan = yield* PlanExitTool
     const webfetch = yield* WebFetchTool
     const websearch = yield* WebSearchTool
-    const bash = yield* BashTool
+    const shell = yield* ShellTool
     const codesearch = yield* CodeSearchTool
     const globtool = yield* GlobTool
     const writetool = yield* WriteTool
@@ -182,7 +182,7 @@ export const layer: Layer.Layer<
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
-          bash: Tool.init(bash),
+          shell: Tool.init(shell),
           read: Tool.init(read),
           glob: Tool.init(globtool),
           grep: Tool.init(greptool),
@@ -208,7 +208,7 @@ export const layer: Layer.Layer<
           builtin: [
             tool.invalid,
             ...(questionEnabled ? [tool.question] : []),
-            tool.bash,
+            tool.shell,
             tool.read,
             tool.glob,
             tool.grep,

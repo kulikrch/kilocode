@@ -3,7 +3,7 @@ import os from "os"
 import { createWriteStream } from "node:fs"
 import * as Tool from "./tool"
 import path from "path"
-import DESCRIPTION from "./bash.txt"
+import DESCRIPTION from "./shell/shell.txt"
 import { Log } from "../util"
 import { Instance } from "../project/instance"
 import { lazy } from "@/util/lazy"
@@ -20,6 +20,7 @@ import { Plugin } from "@/plugin"
 import { Effect, Stream } from "effect"
 import { ChildProcess } from "effect/unstable/process"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import { ShellID } from "./shell/id"
 
 const MAX_METADATA_LENGTH = 30_000
 const DEFAULT_TIMEOUT = Flag.KILO_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS || 2 * 60 * 1000
@@ -85,7 +86,7 @@ type Chunk = {
   size: number
 }
 
-export const log = Log.create({ service: "bash-tool" })
+export const log = Log.create({ service: "shell-tool" })
 
 const resolveWasm = (asset: string) => {
   if (asset.startsWith("file://")) return fileURLToPath(asset)
@@ -255,13 +256,13 @@ function tail(text: string, maxLines: number, maxBytes: number) {
   }
 }
 
-const parse = Effect.fn("BashTool.parse")(function* (command: string, ps: boolean) {
+const parse = Effect.fn("ShellTool.parse")(function* (command: string, ps: boolean) {
   const tree = yield* Effect.promise(() => parser().then((p) => (ps ? p.ps : p.bash).parse(command)))
   if (!tree) throw new Error("Failed to parse command")
   return tree.rootNode
 })
 
-const ask = Effect.fn("BashTool.ask")(function* (ctx: Tool.Context, scan: Scan, command: string) {
+const ask = Effect.fn("ShellTool.ask")(function* (ctx: Tool.Context, scan: Scan, command: string) {
   // kilocode_change
   if (scan.dirs.size > 0) {
     const globs = Array.from(scan.dirs).map((dir) => {
@@ -278,7 +279,7 @@ const ask = Effect.fn("BashTool.ask")(function* (ctx: Tool.Context, scan: Scan, 
 
   if (scan.patterns.size === 0) return
   yield* ctx.ask({
-    permission: "bash",
+    permission: ShellID.ToolID,
     patterns: Array.from(scan.patterns),
     always: Array.from(scan.always),
     metadata: { command }, // kilocode_change
@@ -331,16 +332,15 @@ const parser = lazy(async () => {
   return { bash, ps }
 })
 
-// TODO: we may wanna rename this tool so it works better on other shells
-export const BashTool = Tool.define(
-  "bash",
+export const ShellTool = Tool.define(
+  ShellID.ToolID,
   Effect.gen(function* () {
     const spawner = yield* ChildProcessSpawner
     const fs = yield* AppFileSystem.Service
     const trunc = yield* Truncate.Service
     const plugin = yield* Plugin.Service
 
-    const cygpath = Effect.fn("BashTool.cygpath")(function* (shell: string, text: string) {
+    const cygpath = Effect.fn("ShellTool.cygpath")(function* (shell: string, text: string) {
       const lines = yield* spawner
         .lines(ChildProcess.make(shell, ["-lc", 'cygpath -w -- "$1"', "_", text]))
         .pipe(Effect.catch(() => Effect.succeed([] as string[])))
@@ -349,7 +349,7 @@ export const BashTool = Tool.define(
       return AppFileSystem.normalizePath(file)
     })
 
-    const resolvePath = Effect.fn("BashTool.resolvePath")(function* (text: string, root: string, shell: string) {
+    const resolvePath = Effect.fn("ShellTool.resolvePath")(function* (text: string, root: string, shell: string) {
       if (process.platform === "win32") {
         if (Shell.posix(shell) && text.startsWith("/") && AppFileSystem.windowsPath(text) === text) {
           const file = yield* cygpath(shell, text)
@@ -360,7 +360,7 @@ export const BashTool = Tool.define(
       return path.resolve(root, text)
     })
 
-    const argPath = Effect.fn("BashTool.argPath")(function* (arg: string, cwd: string, ps: boolean, shell: string) {
+    const argPath = Effect.fn("ShellTool.argPath")(function* (arg: string, cwd: string, ps: boolean, shell: string) {
       const text = ps ? expand(arg, cwd, shell) : home(unquote(arg))
       const file = text && prefix(text)
       if (!file || dynamic(file, ps)) return
@@ -369,7 +369,7 @@ export const BashTool = Tool.define(
       return yield* resolvePath(next, cwd, shell)
     })
 
-    const collect = Effect.fn("BashTool.collect")(function* (root: Node, cwd: string, ps: boolean, shell: string) {
+    const collect = Effect.fn("ShellTool.collect")(function* (root: Node, cwd: string, ps: boolean, shell: string) {
       const scan: Scan = {
         dirs: new Set<string>(),
         patterns: new Set<string>(),
@@ -400,7 +400,7 @@ export const BashTool = Tool.define(
       return scan
     })
 
-    const shellEnv = Effect.fn("BashTool.shellEnv")(function* (ctx: Tool.Context, cwd: string) {
+    const shellEnv = Effect.fn("ShellTool.shellEnv")(function* (ctx: Tool.Context, cwd: string) {
       const extra = yield* plugin.trigger(
         "shell.env",
         { cwd, sessionID: ctx.sessionID, callID: ctx.callID },
@@ -412,7 +412,7 @@ export const BashTool = Tool.define(
       }
     })
 
-    const run = Effect.fn("BashTool.run")(function* (
+    const run = Effect.fn("ShellTool.run")(function* (
       input: {
         shell: string
         name: string
@@ -581,7 +581,7 @@ export const BashTool = Tool.define(
           name === "powershell"
             ? "If the commands depend on each other and must run sequentially, avoid '&&' in this shell because Windows PowerShell 5.1 does not support it. Use PowerShell conditionals such as `cmd1; if ($?) { cmd2 }` when later commands must depend on earlier success."
             : "If the commands depend on each other and must run sequentially, use a single Bash call with '&&' to chain them together (e.g., `git add . && git commit -m \"message\" && git push`). For instance, if one operation must complete before another starts (like mkdir before cp, Write before Bash for git operations, or git add before git commit), run these operations sequentially instead."
-        log.info("bash tool using shell", { shell })
+        log.info("shell tool using shell", { shell })
 
         return {
           description: DESCRIPTION.replaceAll("${directory}", Instance.directory)

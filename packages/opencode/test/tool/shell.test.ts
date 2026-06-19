@@ -3,7 +3,7 @@ import { Effect, Layer, ManagedRuntime } from "effect"
 import os from "os"
 import path from "path"
 import { Shell } from "../../src/shell/shell"
-import { BashTool } from "../../src/tool/bash"
+import { ShellTool } from "../../src/tool/shell"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "../../src/util"
 import { tmpdir } from "../fixture/fixture"
@@ -26,7 +26,7 @@ const runtime = ManagedRuntime.make(
 )
 
 function initBash() {
-  return runtime.runPromise(BashTool.pipe(Effect.flatMap((info) => info.init())))
+  return runtime.runPromise(ShellTool.pipe(Effect.flatMap((info) => info.init())))
 }
 
 const ctx = {

@@ -31,7 +31,7 @@ import { Locale } from "@/util"
 import type { Tool } from "@/tool"
 import type { ReadTool } from "@/tool/read"
 import type { WriteTool } from "@/tool/write"
-import { BashTool } from "@/tool/bash"
+import { ShellTool } from "@/tool/shell"
 import type { GlobTool } from "@/tool/glob"
 import { TodoWriteTool } from "@/tool/todo"
 import type { GrepTool } from "@/tool/grep"
@@ -1901,7 +1901,7 @@ function BlockTool(props: {
   )
 }
 
-function Bash(props: ToolProps<typeof BashTool>) {
+function Bash(props: ToolProps<typeof ShellTool>) {
   const { theme } = useTheme()
   const sync = useSync()
   const isRunning = createMemo(() => props.part.state.status === "running")
