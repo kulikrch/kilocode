@@ -599,6 +599,7 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service> =
       })
       const msgs = yield* messages({ sessionID: input.sessionID })
       const idMap = new Map<string, MessageID>()
+      const writer = KiloSession.writer(session.id, SyncEvent) // kilocode_change - commit copied transcript in one transaction
 
       for (const msg of msgs) {
         if (input.messageID && msg.info.id >= input.messageID) break
@@ -606,22 +607,28 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service> =
         idMap.set(msg.info.id, newID)
 
         const parentID = msg.info.role === "assistant" && msg.info.parentID ? idMap.get(msg.info.parentID) : undefined
-        const cloned = yield* updateMessage({
+        // kilocode_change start - queue copied messages for the atomic transcript commit
+        const cloned = writer.message({
           ...msg.info,
           sessionID: session.id,
           id: newID,
+          ...(msg.info.role === "assistant" && { cost: 0 }),
           ...(parentID && { parentID }),
         })
+        // kilocode_change end
 
         for (const part of msg.parts) {
-          yield* updatePart({
+          const copy: MessageV2.Part = {
             ...part,
             id: PartID.ascending(),
             messageID: cloned.id,
             sessionID: session.id,
-          })
+            ...(part.type === "step-finish" && { cost: 0 }),
+          }
+          writer.part(copy) // kilocode_change - queue copied parts for the atomic transcript commit
         }
       }
+      yield* writer.commit() // kilocode_change - copied-row events stay silent until the fork is complete
       return session
     })
 

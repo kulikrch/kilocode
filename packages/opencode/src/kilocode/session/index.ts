@@ -1,5 +1,5 @@
 // kilocode_change - new file
-import { remapChildren as _remapChildren } from "./fork"
+import { writer as _writer } from "./fork"
 import z from "zod"
 import { BusEvent } from "@/bus/bus-event"
 import { Session } from "@/session"
@@ -296,15 +296,13 @@ export namespace KiloSession {
     }
   }
 
-  export const remapChildren = _remapChildren
+  export const writer = _writer
 }
 
 export const kiloSessionFork = fn(
   z.object({ sessionID: SessionID.zod, messageID: MessageID.zod.optional() }),
   async (input) => {
     const { runPromise } = makeRuntime(Session.Service, Session.defaultLayer)
-    const session = await runPromise((svc) => svc.fork(input))
-    await KiloSession.remapChildren(session.id)
-    return session
+    return runPromise((svc) => svc.fork(input))
   },
 )

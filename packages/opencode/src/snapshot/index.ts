@@ -61,7 +61,7 @@ const max = 100
 
 // kilocode_change start - internal state carries directory-scoped slow-track guard and accepts seed options
 type State = Omit<Interface, "init" | "track"> & {
-  readonly track: (opts?: Parameters<Interface["track"]>[0]) => Effect.Effect<string | undefined, never, unknown>
+  readonly track: (opts?: Parameters<Interface["track"]>[0]) => Effect.Effect<string | undefined>
   readonly trackState: KiloSnapshotTrack.State
 }
 // kilocode_change end
@@ -811,61 +811,80 @@ export const layer: Layer.Layer<
       }),
     )
 
-    return Service.of({
-      init: Effect.fn("Snapshot.init")(function* () {
-        yield* InstanceState.get(state)
-      }),
-      cleanup: Effect.fn("Snapshot.cleanup")(function* () {
-        return yield* InstanceState.useEffect(state, (s) => s.cleanup())
-      }),
-      // kilocode_change start - timeout guard with interactive and managed wait policies
-      track: Effect.fn("Snapshot.track")(function* (opts) {
-        return yield* InstanceState.useEffect(state, (s) =>
-          KiloSnapshotTrack.wrap({
-            inner: s.track(opts) as Effect.Effect<string | undefined>,
-            state: s.trackState,
-            snapshotInitialization: opts?.snapshotInitialization,
-            sessionID: opts?.sessionID,
-            messageID: opts?.messageID,
-          }),
-        )
+      // kilocode_change start - service-local state and cache avoid leaking across Snapshot layer instances
+      const trackState = KiloSnapshotTrack.makeStates()
+      const cache = new Map<string, Promise<FileDiff[]>>()
+      const max = 100
+      // kilocode_change end
+
+      return Service.of({
+        init: Effect.fn("Snapshot.init")(function* () {
+          yield* InstanceState.get(state)
+        }),
+        cleanup: Effect.fn("Snapshot.cleanup")(function* () {
+          return yield* InstanceState.useEffect(state, (s) => s.cleanup())
+        }),
+        // kilocode_change start - isolate turn-facing snapshot work from poisoned locks
+        track: Effect.fn("Snapshot.track")(function* (opts) {
+          const ctx = yield* InstanceState.context
+          const guard = trackState(ctx.worktree)
+          return yield* KiloSnapshotTrack.protect({
+            inner: KiloSnapshotTrack.wrap({
+              inner: InstanceState.useEffect(state, (s) => s.track(opts)),
+              state: guard,
+              snapshotInitialization: opts?.snapshotInitialization,
+              sessionID: opts?.sessionID,
+              messageID: opts?.messageID,
+            }),
+            state: guard,
+            fallback: undefined,
+            operation: "track",
+          })
+        }),
+        patch: Effect.fn("Snapshot.patch")(function* (hash: string) {
+          const ctx = yield* InstanceState.context
+          const guard = trackState(ctx.worktree)
+          return yield* KiloSnapshotTrack.protect({
+            inner: InstanceState.useEffect(state, (s) => s.patch(hash)),
+            state: guard,
+            fallback: { hash, files: [] },
+            operation: "patch",
+          })
+        }),
         // kilocode_change end
-      }),
-      patch: Effect.fn("Snapshot.patch")(function* (hash: string) {
-        return yield* InstanceState.useEffect(state, (s) => s.patch(hash))
-      }),
-      restore: Effect.fn("Snapshot.restore")(function* (snapshot: string) {
-        return yield* InstanceState.useEffect(state, (s) => s.restore(snapshot))
-      }),
-      revert: Effect.fn("Snapshot.revert")(function* (patches: Patch[]) {
-        return yield* InstanceState.useEffect(state, (s) => s.revert(patches))
-      }),
-      diff: Effect.fn("Snapshot.diff")(function* (hash: string) {
-        return yield* InstanceState.useEffect(state, (s) => s.diff(hash))
-      }),
-      diffFull: Effect.fn("Snapshot.diffFull")(function* (from: string, to: string) {
-        // kilocode_change start - cache full diffs at the service boundary
-        if (from === to) return []
-        const key = `${from}:${to}`
-        const hit = cache.get(key)
-        if (hit) return yield* Effect.promise(() => hit)
-        if (cache.size >= max) {
-          const first = cache.keys().next().value
-          if (first) cache.delete(first)
-        }
-        const ctx = yield* Effect.context()
-        const pending = Effect.runPromiseWith(ctx)(InstanceState.useEffect(state, (s) => s.diffFull(from, to))).catch(
-          (err) => {
-            cache.delete(key)
-            throw err
-          },
-        )
-        cache.set(key, pending)
-        return yield* Effect.promise(() => pending)
-        // kilocode_change end
-      }),
-    })
-  }),
+        restore: Effect.fn("Snapshot.restore")(function* (snapshot: string) {
+          return yield* InstanceState.useEffect(state, (s) => s.restore(snapshot))
+        }),
+        revert: Effect.fn("Snapshot.revert")(function* (patches: Patch[]) {
+          return yield* InstanceState.useEffect(state, (s) => s.revert(patches))
+        }),
+        diff: Effect.fn("Snapshot.diff")(function* (hash: string) {
+          return yield* InstanceState.useEffect(state, (s) => s.diff(hash))
+        }),
+        diffFull: Effect.fn("Snapshot.diffFull")(function* (from: string, to: string) {
+          // kilocode_change start - cache full diffs at the service boundary
+          if (from === to) return []
+          const directory = yield* InstanceState.directory
+          const key = `${directory}\0${from}:${to}`
+          const hit = cache.get(key)
+          if (hit) return yield* Effect.promise(() => hit)
+          if (cache.size >= max) {
+            const first = cache.keys().next().value
+            if (first) cache.delete(first)
+          }
+          const ctx = yield* Effect.context()
+          const pending = Effect.runPromiseWith(ctx)(InstanceState.useEffect(state, (s) => s.diffFull(from, to))).catch(
+            (err) => {
+              cache.delete(key)
+              throw err
+            },
+          )
+          cache.set(key, pending)
+          return yield* Effect.promise(() => pending)
+          // kilocode_change end
+        }),
+      })
+    }),
 )
 
 export const defaultLayer = layer.pipe(
