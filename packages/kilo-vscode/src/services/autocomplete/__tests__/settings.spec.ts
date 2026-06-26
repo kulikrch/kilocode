@@ -61,4 +61,32 @@ describe("autocomplete settings", () => {
 
     expect(validAutocompleteSetting("enableAutoTrigger", "true")).toBe(false)
   })
+
+  it("includes SourceCraft-style UX settings in loaded settings", async () => {
+    state.set("enableNextEditSuggestion", true)
+    state.set("enableEmptyIndicator", false)
+    state.set("enableLoadingIndicator", false)
+    state.set("enableEmptyLineHint", false)
+    state.set("delayedRequestTimeoutMs", 450)
+    const { buildAutocompleteSettingsMessage } = await import("../settings")
+
+    expect(buildAutocompleteSettingsMessage().settings).toMatchObject({
+      enableNextEditSuggestion: true,
+      enableEmptyIndicator: false,
+      enableLoadingIndicator: false,
+      enableEmptyLineHint: false,
+      delayedRequestTimeoutMs: 450,
+    })
+  })
+
+  it("validates SourceCraft-style UX settings", async () => {
+    const { validAutocompleteSetting } = await import("../settings")
+
+    expect(validAutocompleteSetting("enableNextEditSuggestion", true)).toBe(true)
+    expect(validAutocompleteSetting("enableEmptyIndicator", true)).toBe(true)
+    expect(validAutocompleteSetting("enableLoadingIndicator", true)).toBe(true)
+    expect(validAutocompleteSetting("enableEmptyLineHint", true)).toBe(true)
+    expect(validAutocompleteSetting("delayedRequestTimeoutMs", 200)).toBe(true)
+    expect(validAutocompleteSetting("delayedRequestTimeoutMs", 199)).toBe(false)
+  })
 })

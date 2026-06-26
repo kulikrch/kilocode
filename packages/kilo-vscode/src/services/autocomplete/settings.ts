@@ -24,6 +24,11 @@ export function buildAutocompleteSettingsMessage() {
       enableAutoTrigger: config.get<boolean>("enableAutoTrigger", true),
       enableSmartInlineTaskKeybinding: config.get<boolean>("enableSmartInlineTaskKeybinding", false),
       enableChatAutocomplete: config.get<boolean>("enableChatAutocomplete", false),
+      enableNextEditSuggestion: config.get<boolean>("enableNextEditSuggestion", false),
+      enableEmptyIndicator: config.get<boolean>("enableEmptyIndicator", true),
+      enableLoadingIndicator: config.get<boolean>("enableLoadingIndicator", true),
+      enableEmptyLineHint: config.get<boolean>("enableEmptyLineHint", true),
+      delayedRequestTimeoutMs: config.get<number>("delayedRequestTimeoutMs", 200),
       model: getAutocompleteModel(config.get<string>("model") ?? "").id,
     },
   }
@@ -47,6 +52,11 @@ export function validAutocompleteSetting(key: string, value: unknown) {
   if (key === "enableAutoTrigger") return typeof value === "boolean"
   if (key === "enableSmartInlineTaskKeybinding") return typeof value === "boolean"
   if (key === "enableChatAutocomplete") return typeof value === "boolean"
+  if (key === "enableNextEditSuggestion") return typeof value === "boolean"
+  if (key === "enableEmptyIndicator") return typeof value === "boolean"
+  if (key === "enableLoadingIndicator") return typeof value === "boolean"
+  if (key === "enableEmptyLineHint") return typeof value === "boolean"
+  if (key === "delayedRequestTimeoutMs") return typeof value === "number" && value >= 200
 
   return false
 }

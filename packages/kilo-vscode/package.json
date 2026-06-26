@@ -145,6 +145,32 @@
         "category": "Kilo Code"
       },
       {
+        "command": "kilo-code.new.autocomplete.trigger",
+        "title": "Trigger AI Code Completion",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.discard",
+        "title": "Discard AI Code Completion",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.acceptNextEditSuggestion",
+        "title": "Accept Next Edit Suggestion",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.discardNextEditSuggestion",
+        "title": "Discard Next Edit Suggestion",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.disableStatusIndicator",
+        "title": "Disable Autocomplete Status Indicators",
+        "category": "Kilo Code",
+        "icon": "$(eye-closed)"
+      },
+      {
         "command": "kilo-code.new.agentManager.previousSession",
         "title": "Agent Manager: Previous Session",
         "category": "Kilo Code"
@@ -475,6 +501,13 @@
           "command": "kilo-code.new.terminalExplainCommand",
           "group": "1_actions@3"
         }
+      ],
+      "editor/lineNumber/context": [
+        {
+          "command": "kilo-code.new.autocomplete.disableStatusIndicator",
+          "group": "navigation@0",
+          "when": "editorLineNumber in kilo-code.new.autocompleteCurrentLines"
+        }
       ]
     },
     "keybindings": [
@@ -666,6 +699,36 @@
         "when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilo-code.new.autocomplete.hasSuggestions"
       },
       {
+        "command": "kilo-code.new.autocomplete.trigger",
+        "key": "ctrl+space",
+        "mac": "ctrl+space",
+        "when": "editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.trigger",
+        "key": "ctrl+enter",
+        "mac": "ctrl+enter",
+        "when": "editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.discard",
+        "key": "escape",
+        "mac": "escape",
+        "when": "inlineSuggestionVisible"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.acceptNextEditSuggestion",
+        "key": "tab",
+        "mac": "tab",
+        "when": "kilo-code.new.hasNextEditSuggestion"
+      },
+      {
+        "command": "kilo-code.new.autocomplete.discardNextEditSuggestion",
+        "key": "escape",
+        "mac": "escape",
+        "when": "kilo-code.new.hasNextEditSuggestion"
+      },
+      {
         "command": "kilo-code.new.autocomplete.generateSuggestions",
         "key": "ctrl+l",
         "mac": "cmd+l",
@@ -766,6 +829,32 @@
           "type": "boolean",
           "default": false,
           "description": "Enable chat textarea autocomplete"
+        },
+        "kilo-code.new.autocomplete.enableNextEditSuggestion": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable next edit suggestions for related replace edits"
+        },
+        "kilo-code.new.autocomplete.enableEmptyIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a gutter indicator when no completion is available for the current line"
+        },
+        "kilo-code.new.autocomplete.enableLoadingIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a gutter indicator while autocomplete is loading"
+        },
+        "kilo-code.new.autocomplete.enableEmptyLineHint": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a lightweight inline hint on empty editor lines"
+        },
+        "kilo-code.new.autocomplete.delayedRequestTimeoutMs": {
+          "type": "number",
+          "minimum": 200,
+          "default": 200,
+          "description": "Autocomplete request delay in milliseconds"
         },
         "kilo-code.new.claudeCodeCompat": {
           "type": "boolean",

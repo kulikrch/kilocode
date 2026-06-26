@@ -34,6 +34,8 @@ import { shouldSkipAutocomplete } from "./contextualSkip"
 import { FileIgnoreController } from "../shims/FileIgnoreController"
 import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 import { ErrorBackoff } from "./ErrorBackoff"
+import { AutocompleteDecorationManager, NextEditSuggestionProvider, noopNextEditSuggestionAdapter } from "../sourcecraft"
+import type { NextEditSuggestionAdapter } from "../sourcecraft"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -141,6 +143,17 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   private telemetry: AutocompleteTelemetry | null
   /** Information about the last suggestion shown to the user */
   private lastSuggestion: LastSuggestionInfo | null = null
+  private decorationManager: AutocompleteDecorationManager
+  private uiDisposables: vscode.Disposable[] = []
+  private activeNextEditProvider: NextEditSuggestionProvider | null = null
+  private nextEditSuggestionAdapter: NextEditSuggestionAdapter = noopNextEditSuggestionAdapter
+  private lastEditorState:
+    | {
+        document: vscode.TextDocument
+        version: number
+        selection: vscode.Selection
+      }
+    | null = null
   /** Circuit breaker / exponential backoff for API errors */
   public readonly backoff = new ErrorBackoff()
   /** Optional callback fired once when a fatal (non-retriable) error is first detected */
@@ -177,11 +190,30 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
 
     this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
     this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
+    this.decorationManager = new AutocompleteDecorationManager(context)
 
     this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () => {
       this.telemetry?.captureAcceptSuggestion(this.lastSuggestion?.length)
       vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
     })
+
+    this.uiDisposables.push(
+      vscode.window.onDidChangeTextEditorSelection((event) => {
+        this.updateEmptyLineDecoration(event.textEditor)
+      }),
+      vscode.workspace.onDidChangeTextDocument((event) => {
+        const editor = vscode.window.activeTextEditor
+        if (editor?.document === event.document) {
+          this.updateEmptyLineDecoration(editor)
+        }
+      }),
+      vscode.commands.registerCommand("kilo-code.new.autocomplete.acceptNextEditSuggestion", async (args) => {
+        await this.activeNextEditProvider?.acceptActiveSuggestion(args?.reason)
+      }),
+      vscode.commands.registerCommand("kilo-code.new.autocomplete.discardNextEditSuggestion", async (args) => {
+        await this.activeNextEditProvider?.discardActiveSuggestion(args?.reason)
+      }),
+    )
   }
 
   private async createIgnore(dir: string): Promise<FileIgnoreController> {
@@ -213,6 +245,9 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     this.fimAbortController = null
     this.isFirstCall = true
     this.lastSuggestion = null
+    this.activeNextEditProvider?.dispose()
+    this.activeNextEditProvider = null
+    this.decorationManager.clearAll()
     this.telemetry?.cancelVisibilityTracking()
     void vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
   }
@@ -326,6 +361,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     this.fatalNotified = false
   }
 
+  public setNextEditSuggestionAdapter(adapter: NextEditSuggestionAdapter | null): void {
+    this.nextEditSuggestionAdapter = adapter ?? noopNextEditSuggestionAdapter
+  }
+
   public dispose(): void {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer)
@@ -338,6 +377,13 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     this.telemetry?.dispose()
     this.contextService?.dispose()
     this.contextService = null
+    this.activeNextEditProvider?.dispose()
+    this.activeNextEditProvider = null
+    this.decorationManager.dispose()
+    for (const disposable of this.uiDisposables) {
+      disposable.dispose()
+    }
+    this.uiDisposables = []
     this.recentlyVisitedRangesService.dispose()
     this.recentlyEditedTracker.dispose()
     void this.disposeIgnoreController()
@@ -371,6 +417,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
     vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
 
+    if (this.activeNextEditProvider?.isActiveSuggestionVisibleOrReady) {
+      return []
+    }
+
     // Build telemetry context
     const telemetryContext: AutocompleteContext = {
       languageId: document.languageId,
@@ -390,48 +440,13 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     // This prevents flooding the API with thousands of failed requests when
     // credits are depleted (402), auth is invalid (401/403), or the server
     // is rate-limiting (429) / having issues (5xx).
-    if (this.backoff.blocked()) {
-      // For 402 (credits depleted), periodically check the balance endpoint
-      // instead of sending a probe FIM request. If the user has added credits,
-      // reset the backoff so autocomplete resumes.
-      if (this.backoff.getFatalStatus() === 402 && this.backoff.shouldProbe()) {
-        const funded = await this.model.hasBalance()
-        if (funded) {
-          this.backoff.reset()
-          this.fatalNotified = false
-        }
-      }
-      if (this.backoff.blocked()) return []
-    }
-
-    if (!document?.uri?.fsPath) {
+    if (await this.isBackoffBlocked()) {
       return []
     }
 
     try {
-      // Check if file is ignored (for manual trigger via codeSuggestion)
-      // Skip ignore check for untitled documents
-      if (!document.isUntitled) {
-        try {
-          // Try to get the controller with a short timeout
-          const controller = await Promise.race([
-            this.ignoreController,
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 50)),
-          ])
-
-          if (!controller) {
-            // If promise hasn't resolved yet, assume file is ignored
-            return []
-          }
-
-          const isAccessible = controller.validateAccess(document.fileName)
-          if (!isAccessible) {
-            return []
-          }
-        } catch {
-          // On error, assume file is ignored
-          return []
-        }
+      if (!(await this.isDocumentAccessible(document))) {
+        return []
       }
 
       const { prefix, suffix } = extractPrefixSuffix(document, position)
@@ -446,6 +461,8 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         }
         this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
         this.telemetry?.startVisibilityTracking(matchingResult.fillInAtCursor, "cache", telemetryContext)
+        this.decorationManager.updateDecoration("emptyLine", false, position.line)
+        this.decorationManager.updateDecoration("notFound", false, position.line)
         vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", true)
         return stringToInlineCompletions(matchingResult.text, position)
       }
@@ -470,9 +487,15 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         }
         this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
         this.telemetry?.startVisibilityTracking(cachedResult.fillInAtCursor, "llm", telemetryContext)
+        this.decorationManager.updateDecoration("emptyLine", false, position.line)
+        this.decorationManager.updateDecoration("notFound", false, position.line)
         vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", true)
       } else {
         this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
+        const shown = await this.showNextEditSuggestion(document, position, prefix, suffix, _token)
+        if (!shown) {
+          this.updateNoHintDecoration(document, position)
+        }
       }
 
       return stringToInlineCompletions(cachedResult?.text ?? "", position)
@@ -481,6 +504,124 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       // do not catch, just let the error cascade
       return []
     }
+  }
+
+  private async isBackoffBlocked(): Promise<boolean> {
+    if (!this.backoff.blocked()) {
+      return false
+    }
+
+    // For 402 (credits depleted), periodically check the balance endpoint
+    // instead of sending a probe FIM request. If the user has added credits,
+    // reset the backoff so autocomplete resumes.
+    if (this.backoff.getFatalStatus() === 402 && this.backoff.shouldProbe()) {
+      const funded = await this.model.hasBalance()
+      if (funded) {
+        this.backoff.reset()
+        this.fatalNotified = false
+      }
+    }
+
+    return this.backoff.blocked()
+  }
+
+  private async isDocumentAccessible(document: vscode.TextDocument): Promise<boolean> {
+    if (!document?.uri?.fsPath) {
+      return false
+    }
+
+    // Check if file is ignored (for manual trigger via codeSuggestion)
+    // Skip ignore check for untitled documents
+    if (document.isUntitled) {
+      return true
+    }
+
+    try {
+      const controller = await Promise.race([
+        this.ignoreController,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 50)),
+      ])
+
+      if (!controller) {
+        return false
+      }
+
+      return controller.validateAccess(document.fileName)
+    } catch {
+      return false
+    }
+  }
+
+  private updateEmptyLineDecoration(editor: vscode.TextEditor): void {
+    if (!editor.selection.isEmpty) {
+      this.decorationManager.updateDecoration("emptyLine", false)
+      return
+    }
+
+    if (
+      this.lastEditorState?.document === editor.document &&
+      this.lastEditorState.version === editor.document.version &&
+      this.lastEditorState.selection.isEqual(editor.selection)
+    ) {
+      return
+    }
+
+    const position = editor.selection.active
+    const line = editor.document.lineAt(position.line).text
+    const { prefix, suffix } = extractPrefixSuffix(editor.document, position)
+    const hasCached = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory) !== null
+    this.decorationManager.updateDecoration("emptyLine", line.trim().length === 0 && !hasCached, position.line)
+    this.lastEditorState = {
+      document: editor.document,
+      version: editor.document.version,
+      selection: editor.selection,
+    }
+  }
+
+  private updateNoHintDecoration(document: vscode.TextDocument, position: vscode.Position): void {
+    const editor = vscode.window.activeTextEditor
+    if (editor?.document !== document || !editor.selection.active.isEqual(position)) {
+      return
+    }
+
+    this.decorationManager.updateDecoration("notFound", true, position.line)
+  }
+
+  private async showNextEditSuggestion(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    prefix: string,
+    suffix: string,
+    token: vscode.CancellationToken,
+  ): Promise<boolean> {
+    const settings = this.getSettings()
+    if (!settings?.enableNextEditSuggestion) {
+      return false
+    }
+
+    const editor = vscode.window.activeTextEditor
+    if (!editor || editor.document !== document) {
+      return false
+    }
+
+    const items = await this.nextEditSuggestionAdapter.getNextEdits(
+      {
+        document,
+        position,
+        prefix,
+        suffix,
+        languageId: document.languageId,
+      },
+      token,
+    )
+
+    if (items.length === 0 || token.isCancellationRequested) {
+      return false
+    }
+
+    this.activeNextEditProvider?.dispose()
+    this.activeNextEditProvider = new NextEditSuggestionProvider(editor, crypto.randomUUID(), items)
+    return this.activeNextEditProvider.showActiveSuggestion()
   }
 
   /**
@@ -585,7 +726,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
           this.removePendingRequest(pendingRequest)
           resolve()
         }
-      }, this.debounceDelayMs)
+      }, this.getRequestDelayMs())
     })
 
     // Complete the pending request object
@@ -612,6 +753,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     this.fimAbortController = controller
 
     const startTime = performance.now()
+    const editor = vscode.window.activeTextEditor
+    const position =
+      prompt.autocompleteInput.pos &&
+      new vscode.Position(prompt.autocompleteInput.pos.line, prompt.autocompleteInput.pos.character)
 
     // Build telemetry context for this request
     const telemetryContext: AutocompleteContext = {
@@ -628,6 +773,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     }
 
     try {
+      if (position && editor?.document.uri.fsPath === prompt.autocompleteInput.filepath) {
+        this.decorationManager.updateDecoration("loading", true, position.line)
+      }
+
       // Curry processSuggestion with prefix, suffix, model, telemetry context, and languageId
       const curriedProcessSuggestion = (text: string) =>
         this.processSuggestion(text, prefix, suffix, this.model, telemetryContext, languageId)
@@ -683,6 +832,19 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         this.fatalNotified = true
         this.onFatalError?.(this.backoff.getFatalStatus())
       }
+    } finally {
+      if (position && editor?.document.uri.fsPath === prompt.autocompleteInput.filepath) {
+        this.decorationManager.updateDecoration("loading", false, position.line)
+      }
     }
+  }
+
+  private getRequestDelayMs(): number {
+    const configured = this.getSettings()?.delayedRequestTimeoutMs
+    if (typeof configured === "number") {
+      return Math.max(configured, 200)
+    }
+
+    return this.debounceDelayMs
   }
 }
