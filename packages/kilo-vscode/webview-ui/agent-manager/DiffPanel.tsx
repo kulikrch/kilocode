@@ -64,6 +64,7 @@ interface DiffPanelProps {
   onOpenFile?: (relativePath: string, line?: number) => void
   onRevertFile?: (file: string) => void
   revertingFiles?: Set<string>
+  activeTerminalId?: string
 }
 
 export const DiffPanel: Component<DiffPanelProps> = (props) => {

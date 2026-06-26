@@ -69,6 +69,7 @@ interface FullScreenDiffViewProps {
   onOpenFile?: (relativePath: string, line?: number) => void
   onRevertFile?: (file: string) => void
   revertingFiles?: Set<string>
+  activeTerminalId?: string
   onClose: () => void
 }
 

@@ -329,6 +329,23 @@ export interface UpdateConfigMessage {
   config: Partial<Config>
 }
 
+export interface SpeechToTextStartMessage {
+  type: "speechToTextStart"
+  requestId: string
+  model: string
+  language?: string
+}
+
+export interface SpeechToTextStopMessage {
+  type: "speechToTextStop"
+  requestId: string
+}
+
+export interface SpeechToTextCancelMessage {
+  type: "speechToTextCancel"
+  requestId: string
+}
+
 export interface RequestNotificationSettingsMessage {
   type: "requestNotificationSettings"
 }
@@ -921,6 +938,9 @@ export type WebviewMessage =
   | RenameSessionRequest
   | RequestAutocompleteSettingsMessage
   | RequestChatCompletionMessage
+  | SpeechToTextStartMessage
+  | SpeechToTextStopMessage
+  | SpeechToTextCancelMessage
   | RequestFileSearchMessage
   | RequestTerminalContextMessage
   | RequestGitChangesContextMessage

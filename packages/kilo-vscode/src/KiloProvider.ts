@@ -1552,7 +1552,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         title,
         directory: this.getWorkspaceDirectory(sessionID),
       })
-      if (this.currentSession?.id === sessionID) this.setCurrentSession(updated)
+      if (this.currentSession?.id === sessionID) this.currentSession = updated
       this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to rename session:", error)
