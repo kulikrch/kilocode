@@ -5,7 +5,7 @@ export type ReplaceCompletion = {
   replace: string
 }
 
-export type SourceCraftAutocompleteSettings = {
+export type InlineV2AutocompleteSettings = {
   enableNextEditSuggestion: boolean
   enableEmptyIndicator: boolean
   enableLoadingIndicator: boolean

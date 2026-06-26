@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest"
 import {
-  DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS,
-  normalizeSourceCraftAutocompleteSettings,
+  DEFAULT_INLINE_V2_AUTOCOMPLETE_SETTINGS,
+  normalizeInlineV2AutocompleteSettings,
 } from "../settings"
 
-describe("normalizeSourceCraftAutocompleteSettings", () => {
+describe("normalizeInlineV2AutocompleteSettings", () => {
   it("uses conservative defaults for optional UX features", () => {
-    expect(normalizeSourceCraftAutocompleteSettings()).toEqual(DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS)
+    expect(normalizeInlineV2AutocompleteSettings()).toEqual(DEFAULT_INLINE_V2_AUTOCOMPLETE_SETTINGS)
   })
 
   it("clamps request delay to 200ms", () => {
-    expect(normalizeSourceCraftAutocompleteSettings({ delayedRequestTimeoutMs: 1 }).delayedRequestTimeoutMs).toBe(200)
+    expect(normalizeInlineV2AutocompleteSettings({ delayedRequestTimeoutMs: 1 }).delayedRequestTimeoutMs).toBe(200)
   })
 
   it("preserves explicit indicator and next-edit settings", () => {
     expect(
-      normalizeSourceCraftAutocompleteSettings({
+      normalizeInlineV2AutocompleteSettings({
         enableNextEditSuggestion: true,
         enableEmptyIndicator: false,
         enableLoadingIndicator: false,
@@ -31,4 +31,3 @@ describe("normalizeSourceCraftAutocompleteSettings", () => {
     })
   })
 })
-

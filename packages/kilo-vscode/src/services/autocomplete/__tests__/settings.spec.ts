@@ -62,7 +62,7 @@ describe("autocomplete settings", () => {
     expect(validAutocompleteSetting("enableAutoTrigger", "true")).toBe(false)
   })
 
-  it("includes SourceCraft-style UX settings in loaded settings", async () => {
+  it("includes InlineV2 UX settings in loaded settings", async () => {
     state.set("enableNextEditSuggestion", true)
     state.set("enableEmptyIndicator", false)
     state.set("enableLoadingIndicator", false)
@@ -79,7 +79,7 @@ describe("autocomplete settings", () => {
     })
   })
 
-  it("validates SourceCraft-style UX settings", async () => {
+  it("validates InlineV2 UX settings", async () => {
     const { validAutocompleteSetting } = await import("../settings")
 
     expect(validAutocompleteSetting("enableNextEditSuggestion", true)).toBe(true)

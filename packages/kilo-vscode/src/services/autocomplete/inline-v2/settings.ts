@@ -1,8 +1,8 @@
 import * as vscode from "vscode"
 import { AUTOCOMPLETE_CONFIG } from "./constants"
-import type { SourceCraftAutocompleteSettings } from "./types"
+import type { InlineV2AutocompleteSettings } from "./types"
 
-export const DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS: SourceCraftAutocompleteSettings = {
+export const DEFAULT_INLINE_V2_AUTOCOMPLETE_SETTINGS: InlineV2AutocompleteSettings = {
   enableNextEditSuggestion: false,
   enableEmptyIndicator: true,
   enableLoadingIndicator: true,
@@ -12,22 +12,22 @@ export const DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS: SourceCraftAutocompleteS
 
 const MIN_DELAY_MS = 200
 
-export function normalizeSourceCraftAutocompleteSettings(
-  settings: Partial<SourceCraftAutocompleteSettings> = {},
-): SourceCraftAutocompleteSettings {
+export function normalizeInlineV2AutocompleteSettings(
+  settings: Partial<InlineV2AutocompleteSettings> = {},
+): InlineV2AutocompleteSettings {
   return {
-    ...DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS,
+    ...DEFAULT_INLINE_V2_AUTOCOMPLETE_SETTINGS,
     ...settings,
     delayedRequestTimeoutMs: Math.max(
-      settings.delayedRequestTimeoutMs ?? DEFAULT_SOURCECRAFT_AUTOCOMPLETE_SETTINGS.delayedRequestTimeoutMs,
+      settings.delayedRequestTimeoutMs ?? DEFAULT_INLINE_V2_AUTOCOMPLETE_SETTINGS.delayedRequestTimeoutMs,
       MIN_DELAY_MS,
     ),
   }
 }
 
-export function getSourceCraftAutocompleteSettings(context: vscode.ExtensionContext): SourceCraftAutocompleteSettings {
+export function getInlineV2AutocompleteSettings(context: vscode.ExtensionContext): InlineV2AutocompleteSettings {
   const config = vscode.workspace.getConfiguration(AUTOCOMPLETE_CONFIG)
-  return normalizeSourceCraftAutocompleteSettings({
+  return normalizeInlineV2AutocompleteSettings({
     enableNextEditSuggestion:
       context.globalState.get<boolean>("enableNextEditSuggestion") ??
       config.get<boolean>("enableNextEditSuggestion"),

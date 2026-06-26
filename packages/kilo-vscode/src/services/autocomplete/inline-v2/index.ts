@@ -1,6 +1,6 @@
 export { AutocompleteDecorationManager } from "./AutocompleteDecorationManager"
 export { NextEditSuggestionProvider } from "./NextEditSuggestionProvider"
 export { noopNextEditSuggestionAdapter } from "./NextEditSuggestionAdapter"
-export { getSourceCraftAutocompleteSettings, normalizeSourceCraftAutocompleteSettings } from "./settings"
+export { getInlineV2AutocompleteSettings, normalizeInlineV2AutocompleteSettings } from "./settings"
 export type { NextEditSuggestionAdapter } from "./NextEditSuggestionAdapter"
-export type { ReplaceCompletion, SourceCraftAutocompleteSettings } from "./types"
+export type { ReplaceCompletion, InlineV2AutocompleteSettings } from "./types"

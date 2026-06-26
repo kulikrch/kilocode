@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import { AUTOCOMPLETE_PREFIX } from "./constants"
-import { getSourceCraftAutocompleteSettings } from "./settings"
+import { getInlineV2AutocompleteSettings } from "./settings"
 
 type DecorationName = "loading" | "notFound" | "emptyLine"
 
@@ -75,7 +75,7 @@ export class AutocompleteDecorationManager implements vscode.Disposable {
   }
 
   updateDecoration(name: DecorationName, visible: boolean, line?: number): void {
-    const settings = getSourceCraftAutocompleteSettings(this.context)
+    const settings = getInlineV2AutocompleteSettings(this.context)
     if (!this.isEnabled(name, settings)) {
       return
     }
@@ -131,7 +131,7 @@ export class AutocompleteDecorationManager implements vscode.Disposable {
     }
   }
 
-  private isEnabled(name: DecorationName, settings = getSourceCraftAutocompleteSettings(this.context)): boolean {
+  private isEnabled(name: DecorationName, settings = getInlineV2AutocompleteSettings(this.context)): boolean {
     switch (name) {
       case "loading":
         return settings.enableLoadingIndicator
@@ -153,4 +153,3 @@ export class AutocompleteDecorationManager implements vscode.Disposable {
     })
   }
 }
-

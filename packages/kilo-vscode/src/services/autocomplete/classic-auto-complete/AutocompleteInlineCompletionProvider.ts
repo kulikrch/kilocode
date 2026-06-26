@@ -34,8 +34,8 @@ import { shouldSkipAutocomplete } from "./contextualSkip"
 import { FileIgnoreController } from "../shims/FileIgnoreController"
 import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 import { ErrorBackoff } from "./ErrorBackoff"
-import { AutocompleteDecorationManager, NextEditSuggestionProvider, noopNextEditSuggestionAdapter } from "../sourcecraft"
-import type { NextEditSuggestionAdapter } from "../sourcecraft"
+import { AutocompleteDecorationManager, NextEditSuggestionProvider, noopNextEditSuggestionAdapter } from "../inline-v2"
+import type { NextEditSuggestionAdapter } from "../inline-v2"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
