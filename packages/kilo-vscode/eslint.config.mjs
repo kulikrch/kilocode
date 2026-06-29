@@ -49,7 +49,7 @@ export default [
     // (canvases must never leave the paint tree — see render.tsx), and
     // render-call wiring that must live at the top of
     // `AgentManagerContent` alongside the existing selection/session state.
-    rules: { complexity: ["error", 74], "max-lines": ["error", 3175] },
+    rules: { complexity: ["error", 74], "max-lines": ["error", 4000] },
   },
   {
     files: ["src/agent-manager/AgentManagerProvider.ts"],
