@@ -166,6 +166,39 @@ export namespace Telemetry {
     track(TelemetryEvent.PLAN_FOLLOWUP, { sessionId, choice })
   }
 
+  export function trackAiCodeFlow(input: {
+    aiChars: number
+    manualChars?: number
+    ideChars?: number
+    pastedChars?: number
+    repoName?: string | null
+    sessionId?: string
+    messageId?: string
+    files?: number
+    additions?: number
+    deletions?: number
+    source?: string
+  }) {
+    const ai = Math.max(0, Math.trunc(input.aiChars))
+    const manual = Math.max(0, Math.trunc(input.manualChars ?? 0))
+    const ide = Math.max(0, Math.trunc(input.ideChars ?? 0))
+    const pasted = Math.max(0, Math.trunc(input.pastedChars ?? 0))
+    track(TelemetryEvent.AI_CODE_FLOW, {
+      ai_chars: ai,
+      manual_chars: manual,
+      ide_chars: ide,
+      pasted_chars: pasted,
+      total_chars: ai + manual + pasted,
+      repo_name: input.repoName ?? null,
+      sessionId: input.sessionId,
+      messageId: input.messageId,
+      files: input.files,
+      additions: input.additions,
+      deletions: input.deletions,
+      source: input.source,
+    })
+  }
+
   // Share
   export function trackShareCreated(sessionId: string) {
     track(TelemetryEvent.SHARE_CREATED, { sessionId })

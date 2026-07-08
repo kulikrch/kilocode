@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test"
 import { Identity } from "../identity.js"
 import { TelemetryEvent } from "../events.js"
+import { Telemetry } from "../telemetry.js"
 import { PostHogSpanExporter } from "../otel-exporter.js"
 import { ExportResultCode } from "@opentelemetry/core"
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base"
@@ -64,6 +65,18 @@ describe("TelemetryEvent", () => {
     expect(TelemetryEvent.COMMAND_USED).toBeDefined()
     expect(TelemetryEvent.TOOL_USED).toBeDefined()
     expect(TelemetryEvent.AGENT_USED).toBeDefined()
+    expect(String(TelemetryEvent.AI_CODE_FLOW)).toBe("ai_code_flow")
+  })
+
+  test("ai code flow helper is safe before telemetry init", () => {
+    expect(() =>
+      Telemetry.trackAiCodeFlow({
+        aiChars: 12.9,
+        manualChars: -1,
+        ideChars: 2,
+        pastedChars: 3,
+      }),
+    ).not.toThrow()
   })
 
   test("auth events are defined", () => {

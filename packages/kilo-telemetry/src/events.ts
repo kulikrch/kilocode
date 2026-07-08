@@ -16,6 +16,7 @@ export enum TelemetryEvent {
   TOOL_USED = "Tool Used",
   AGENT_USED = "Agent Used",
   PLAN_FOLLOWUP = "Plan Followup",
+  AI_CODE_FLOW = "ai_code_flow",
 
   // Share Events
   SHARE_CREATED = "Share Created",
