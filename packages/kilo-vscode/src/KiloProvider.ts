@@ -144,6 +144,143 @@ const mapAgent = (a: Agent) => ({
 const SESSION_SCOPED_PART_EVENTS = new Set(["message.part.updated", "message.part.delta", "message.part.removed"])
 const isSessionScopedPartEvent = (type: string) => SESSION_SCOPED_PART_EVENTS.has(type)
 
+type SyncName =
+  | "message.updated.1"
+  | "message.removed.1"
+  | "message.part.updated.1"
+  | "message.part.removed.1"
+  | "session.created.1"
+  | "session.updated.1"
+  | "session.deleted.1"
+
+type SyncPayload = {
+  type: "sync"
+  name: SyncName
+  id: string
+  seq: number
+  aggregateID: string
+  data: unknown
+}
+
+type RawSyncPayload = {
+  type: "sync"
+  syncEvent: {
+    type: SyncName
+    id: string
+    seq: number
+    aggregateID: string
+    data: unknown
+  }
+}
+
+type SessionPatch = Partial<Session> & { id?: string | null; revert?: Session["revert"] | null }
+
+type LegacySyncEvent =
+  | {
+      id: string
+      type: "message.updated"
+      properties: Extract<Event, { type: "message.updated" }>["properties"]
+    }
+  | {
+      id: string
+      type: "message.removed"
+      properties: Extract<Event, { type: "message.removed" }>["properties"]
+    }
+  | {
+      id: string
+      type: "message.part.updated"
+      properties: Extract<Event, { type: "message.part.updated" }>["properties"]
+    }
+  | {
+      id: string
+      type: "message.part.removed"
+      properties: Extract<Event, { type: "message.part.removed" }>["properties"]
+    }
+  | {
+      id: string
+      type: "session.created"
+      properties: Extract<Event, { type: "session.created" }>["properties"]
+    }
+  | {
+      source: "sync"
+      id: string
+      seq: number
+      type: "session.updated"
+      properties: { sessionID: string; info: SessionPatch }
+    }
+  | {
+      id: string
+      type: "session.deleted"
+      properties: Extract<Event, { type: "session.deleted" }>["properties"]
+    }
+
+type ProviderEvent = Event | LegacySyncEvent
+
+function isLegacySyncEvent(event: ProviderEvent): event is LegacySyncEvent {
+  if (event.type === "session.updated") return "source" in event && event.source === "sync"
+  return (
+    event.type === "message.updated" ||
+    event.type === "message.removed" ||
+    event.type === "message.part.updated" ||
+    event.type === "message.part.removed" ||
+    event.type === "session.created" ||
+    event.type === "session.deleted"
+  )
+}
+
+function isFullSessionUpdatedEvent(event: ProviderEvent): event is Extract<Event, { type: "session.updated" }> {
+  return event.type === "session.updated" && !isLegacySyncEvent(event)
+}
+
+function applySessionPatch(session: Session, patch: SessionPatch): Session {
+  const entries = Object.entries(patch).filter((entry) => entry[1] !== null)
+  const next = { ...session, ...Object.fromEntries(entries) } as Session
+  if ("revert" in patch && patch.revert === null) delete (next as { revert?: Session["revert"] }).revert
+  return next
+}
+
+export function unwrapSyncEvent(event: Event | SyncPayload | RawSyncPayload): ProviderEvent | undefined {
+  if (event.type !== "sync") return event
+  const payload: SyncPayload =
+    "syncEvent" in event
+      ? {
+          type: "sync",
+          name: event.syncEvent.type,
+          id: event.syncEvent.id,
+          seq: event.syncEvent.seq,
+          aggregateID: event.syncEvent.aggregateID,
+          data: event.syncEvent.data,
+        }
+      : event
+
+  switch (payload.name) {
+    case "message.updated.1":
+      return { id: payload.id, type: "message.updated", properties: payload.data as Extract<Event, { type: "message.updated" }>["properties"] }
+    case "message.removed.1":
+      return { id: payload.id, type: "message.removed", properties: payload.data as Extract<Event, { type: "message.removed" }>["properties"] }
+    case "message.part.updated.1":
+      return {
+        id: payload.id,
+        type: "message.part.updated",
+        properties: payload.data as Extract<Event, { type: "message.part.updated" }>["properties"],
+      }
+    case "message.part.removed.1":
+      return {
+        id: payload.id,
+        type: "message.part.removed",
+        properties: payload.data as Extract<Event, { type: "message.part.removed" }>["properties"],
+      }
+    case "session.created.1":
+      return { id: payload.id, type: "session.created", properties: payload.data as Extract<Event, { type: "session.created" }>["properties"] }
+    case "session.updated.1":
+      return { source: "sync", id: payload.id, seq: payload.seq, type: "session.updated", properties: payload.data as { sessionID: string; info: SessionPatch } }
+    case "session.deleted.1":
+      return { id: payload.id, type: "session.deleted", properties: payload.data as Extract<Event, { type: "session.deleted" }>["properties"] }
+    default:
+      return undefined
+  }
+}
+
 export class KiloProvider implements vscode.WebviewViewProvider, TelemetryPropertiesProvider {
   public static readonly viewType = "kilo-code.SidebarProvider"
   private readonly instanceId = crypto.randomUUID()
@@ -184,6 +321,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private promptRecovery: Promise<void> | null = null
   private trackedSessionIds: Set<string> = new Set()
   private syncedChildSessions: Set<string> = new Set()
+  private readonly checkpoints = new Map<string, Promise<void>>()
+  private readonly revisions = new Map<string, { id: string; seq: number }>()
+  private readonly refreshes = new Map<string, number>()
   /** Tracks the latest status for each session, used to warn before destructive config operations. */
   private sessionStatusMap = new Map<string, SessionStatus["type"]>()
   /** Per-session directory overrides (e.g., worktree paths registered by AgentManagerProvider). */
@@ -259,6 +399,27 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.slimEditMetadata = options?.slimEditMetadata ?? true
 
     TelemetryProxy.getInstance().setProvider(this)
+  }
+
+  private setCurrentSession(session: Session | null): void {
+    const ids = new Set([this.currentSession?.id, session?.id])
+    for (const id of ids) {
+      if (id) this.refreshes.set(id, (this.refreshes.get(id) ?? 0) + 1)
+    }
+    this.currentSession = session
+  }
+
+  private checkpoint(sid: string, run: () => Promise<void>): void {
+    const prior = this.checkpoints.get(sid) ?? Promise.resolve()
+    const pending = prior.catch(() => undefined).then(run)
+    const cleanup = () => {
+      if (this.checkpoints.get(sid) === pending) this.checkpoints.delete(sid)
+    }
+    this.checkpoints.set(sid, pending)
+    void pending.then(cleanup, (error) => {
+      console.error("[Kilo New] checkpoint mutation failed:", error)
+      cleanup()
+    })
   }
 
   setRemoteService(service: RemoteStatusService): void {
@@ -379,6 +540,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         data: profileData,
       })
 
+      if (this.currentSession) {
+        this.refreshSessionDetails(this.currentSession.id, this.getWorkspaceDirectory(this.currentSession.id))
+      }
+
       // Re-send cached worktree stats and git status after webview reload.
       if (this.cachedStats) this.postMessage(this.cachedStats)
       this.postMessage({ type: "gitStatus", repo: this.cachedGitRepo })
@@ -467,7 +632,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Sets currentSession, adds to trackedSessionIds, and notifies the webview.
    */
   public registerSession(session: Session): void {
-    this.currentSession = session
+    this.setCurrentSession(session)
     this.contextSessionID = session.id
     this.trackedSessionIds.add(session.id)
     this.postMessage({
@@ -632,14 +797,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           await this.handleAbort(message.sessionID)
           break
         case "revertSession":
-          this.handleRevertSession(message.sessionID, message.messageID, message.partID).catch((e) =>
-            console.error("[Kilo New] handleRevertSession failed:", e),
+          this.checkpoint(message.sessionID, () =>
+            this.handleRevertSession(message.sessionID, message.messageID, message.partID),
           )
           break
         case "unrevertSession":
-          this.handleUnrevertSession(message.sessionID).catch((e) =>
-            console.error("[Kilo New] handleUnrevertSession failed:", e),
-          )
+          this.checkpoint(message.sessionID, () => this.handleUnrevertSession(message.sessionID))
           break
         case "permissionResponse":
           await handlePermissionResponse(
@@ -656,7 +819,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "clearSession":
           this.contextSessionID = this.currentSession?.id ?? this.contextSessionID
-          this.currentSession = null
+          this.setCurrentSession(null)
           this.focusSession()
           break
         case "loadMessages":
@@ -1097,14 +1260,16 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       // Subscribe to SSE events for this webview (filtered by tracked sessions)
       this.unsubscribeEvent = this.connectionService.onEventFiltered(
         (event) => {
+          const next = unwrapSyncEvent(event as Event | SyncPayload | RawSyncPayload)
+          if (!next) return false
           // Remote status events are global and should always pass through
-          if (event.type === "kilo-sessions.remote-status-changed") return true
-          const sessionId = this.connectionService.resolveEventSessionId(event)
+          if (next.type === "kilo-sessions.remote-status-changed") return true
+          const sessionId = this.resolveEventSessionId(next)
 
           // message.part.* events are always session-scoped; drop if session unknown.
-          if (!sessionId) return !isSessionScopedPartEvent(event.type)
+          if (!sessionId) return !isSessionScopedPartEvent(next.type)
 
-          if (event.type === "session.created" && this.matchesPendingFollowup(event.properties.info)) {
+          if (next.type === "session.created" && this.matchesPendingFollowup(next.properties.info)) {
             return true
           }
 
@@ -1112,12 +1277,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           // KiloProvider instance. The Settings panel is a separate provider with no tracked
           // sessions, but it needs session.status to populate sessionStatusMap and allStatusMap
           // for the busy-session warning on Save.
-          if (event.type === "session.status") return true
+          if (next.type === "session.status") return true
 
           return this.trackedSessionIds.has(sessionId)
         },
         (event) => {
-          this.handleEvent(event)
+          const next = unwrapSyncEvent(event as Event | SyncPayload | RawSyncPayload)
+          if (next) this.handleEvent(next)
         },
       )
 
@@ -1266,7 +1432,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     try {
       const workspaceDir = this.getContextDirectory()
       const { data: session } = await this.client.session.create({ directory: workspaceDir }, { throwOnError: true })
-      this.currentSession = session
+      this.setCurrentSession(session)
       this.contextSessionID = session.id
       this.trackDirectory(session.id, workspaceDir)
       this.trackedSessionIds.add(session.id)
@@ -1288,13 +1454,24 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   /** Non-blocking: refresh session metadata + status for the webview after switching. */
   private refreshSessionDetails(sessionID: string, dir: string, signal?: AbortSignal): void {
     if (!this.client) return
+    const revision = this.revisions.get(sessionID)
+    const refresh = (this.refreshes.get(sessionID) ?? 0) + 1
+    this.refreshes.set(sessionID, refresh)
     this.client.session
       .get({ sessionID, directory: dir })
       .then((r) => {
-        if (r.data && !signal?.aborted) {
-          this.currentSession = r.data
-          this.contextSessionID = r.data.id
+        if (!r.data || signal?.aborted || this.contextSessionID !== sessionID) return
+        if (this.refreshes.get(sessionID) !== refresh) {
+          if (this.revisions.get(sessionID) !== revision) this.refreshSessionDetails(sessionID, dir, signal)
+          return
         }
+        if (this.revisions.get(sessionID) !== revision) {
+          this.refreshSessionDetails(sessionID, dir, signal)
+          return
+        }
+        this.setCurrentSession(r.data)
+        this.contextSessionID = r.data.id
+        this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(r.data) })
       })
       .catch((e: unknown) => console.warn("[Kilo New] KiloProvider: getSession failed (non-critical):", e))
     this.postMessage({ type: "workspaceDirectoryChanged", directory: this.getWorkspaceDirectory(sessionID) })
@@ -1532,7 +1709,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.lastReconciledAt.delete(sessionID)
       this.connectionService.pruneSession(sessionID)
       if (this.currentSession?.id === sessionID) {
-        this.currentSession = null
+        this.setCurrentSession(null)
         this.focusSession(undefined)
       }
       this.postMessage({ type: "sessionDeleted", sessionID })
@@ -1561,7 +1738,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         { throwOnError: true },
       )
       if (this.currentSession?.id === sessionID) {
-        this.currentSession = updated
+        this.setCurrentSession(updated)
       }
       this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
     } catch (error) {
@@ -2312,7 +2489,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     if (!sessionID && !this.currentSession) {
       const { data: session } = await this.client.session.create({ directory: dir }, { throwOnError: true })
-      this.currentSession = session
+      this.setCurrentSession(session)
       this.contextSessionID = session.id
       this.trackDirectory(session.id, dir)
       this.trackedSessionIds.add(session.id)
@@ -2449,6 +2626,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const sid = resolved!.sid
       const dir = resolved!.dir
+      await this.checkpoints.get(sid)
       await runWithMessageConfirmation(this.confirmations, messageID, "KiloProvider: Message request", () =>
         this.withRetry(
           () =>
@@ -2524,6 +2702,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const sid = resolved!.sid
       const dir = resolved!.dir
+      await this.checkpoints.get(sid)
       await runWithMessageConfirmation(this.confirmations, messageID, "KiloProvider: Command request", () =>
         this.withRetry(
           () =>
@@ -2585,9 +2764,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (error) {
       console.error("[Kilo New] KiloProvider: Failed to revert session:", error)
       this.postMessage({ type: "error", message: "Failed to revert session", sessionID })
-      return
+      throw error
     }
-    if (data) this.postMessage({ type: "sessionUpdated", session: sessionToWebview(data) })
+    if (!data) throw new Error("Revert returned no session")
+    this.refreshes.set(sessionID, (this.refreshes.get(sessionID) ?? 0) + 1)
+    if (this.currentSession?.id === sessionID) this.setCurrentSession(data)
+    this.postMessage({ type: "sessionUpdated", session: sessionToWebview(data) })
   }
 
   private async handleUnrevertSession(sessionID: string): Promise<void> {
@@ -2597,9 +2779,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (error) {
       console.error("[Kilo New] KiloProvider: Failed to unrevert session:", error)
       this.postMessage({ type: "error", message: "Failed to redo session", sessionID })
-      return
+      throw error
     }
-    if (data) this.postMessage({ type: "sessionUpdated", session: sessionToWebview(data) })
+    if (!data) throw new Error("Redo returned no session")
+    this.refreshes.set(sessionID, (this.refreshes.get(sessionID) ?? 0) + 1)
+    if (this.currentSession?.id === sessionID) this.setCurrentSession(data)
+    this.postMessage({ type: "sessionUpdated", session: sessionToWebview(data) })
   }
 
   /**
@@ -2886,11 +3071,38 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     ])
   }
 
+  private resolveEventSessionId(event: ProviderEvent): string | undefined {
+    if (isLegacySyncEvent(event)) {
+      switch (event.type) {
+        case "session.created":
+        case "session.updated":
+        case "session.deleted":
+          return event.properties.sessionID
+        case "message.updated":
+        case "message.removed":
+        case "message.part.updated":
+        case "message.part.removed":
+          return event.properties.sessionID
+        default:
+          return undefined
+      }
+    }
+    return this.connectionService.resolveEventSessionId(event)
+  }
+
+  private mapSyncEventToWebviewMessage(event: LegacySyncEvent): ReturnType<typeof mapSSEEventToWebviewMessage> {
+    if (event.type === "session.updated") {
+      if (this.currentSession?.id !== event.properties.sessionID) return null
+      return { type: "sessionUpdated", session: this.sessionToWebview(this.currentSession) }
+    }
+    return mapSSEEventToWebviewMessage(event as Event, this.resolveEventSessionId(event))
+  }
+
   /**
    * Handle SSE events from the CLI backend.
    * Filters events by project ID and tracked session IDs so each webview only sees its own sessions.
    */
-  private handleEvent(event: Event): void {
+  private handleEvent(event: ProviderEvent): void {
     if (event.type === "kilo-sessions.remote-status-changed") {
       this.remoteService?.updateFromEvent({ enabled: event.properties.enabled, connected: event.properties.connected })
       return
@@ -2899,7 +3111,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Drop session events from other projects before any tracking logic.
     // This must come first: the trackedSessionIds guard below would otherwise
     // let a foreign session through if it was accidentally tracked.
-    if (isEventFromForeignProject(event, this.projectID)) return
+    if (!isLegacySyncEvent(event) && !isFullSessionUpdatedEvent(event) && isEventFromForeignProject(event, this.projectID))
+      return
 
     if (event.type === "message.updated") {
       this.confirmations.confirm(event.properties.info.id)
@@ -2926,7 +3139,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
-    const sessionID = this.connectionService.resolveEventSessionId(event)
+    const sessionID = this.resolveEventSessionId(event)
 
     // Events without sessionID (server.connected, server.heartbeat) → always forward
     // Events with sessionID → only forward if this webview tracks that session
@@ -2934,6 +3147,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (!sessionID && isSessionScopedPartEvent(event.type)) return
     if (sessionID && !this.trackedSessionIds.has(sessionID)) {
       return
+    }
+
+    if (event.type === "session.updated") {
+      if (isFullSessionUpdatedEvent(event)) return
+      const sid = event.properties.sessionID
+      const revision = this.revisions.get(sid)
+      const versioned = event.seq > 0 || (revision?.seq ?? 0) > 0
+      if (revision && (versioned ? event.seq <= revision.seq : event.id <= revision.id)) return
+      this.revisions.set(sid, { id: event.id, seq: event.seq })
     }
 
     // Refresh provider and agent lists when the server signals a state disposal
@@ -2960,13 +3182,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Forward relevant events to webview
     // Side effects that must happen before the webview message is sent
     if (event.type === "session.created" && !this.currentSession) {
-      this.currentSession = event.properties.info
+      this.setCurrentSession(event.properties.info)
       this.contextSessionID = event.properties.info.id
       this.trackedSessionIds.add(event.properties.info.id)
     }
-    if (event.type === "session.updated" && this.currentSession?.id === event.properties.info.id) {
-      this.currentSession = event.properties.info
-      this.contextSessionID = event.properties.info.id
+    if (event.type === "session.updated" && this.currentSession?.id === event.properties.sessionID) {
+      const session = applySessionPatch(this.currentSession, event.properties.info)
+      this.setCurrentSession(session)
+      this.contextSessionID = event.properties.sessionID
     }
 
     // Auto-adopt child sessions as soon as the task tool part reveals their ID.
@@ -2988,9 +3211,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       }
     }
 
-    handleNetworkEvent(event.type as string, event.properties as any, this.client, (s) => this.getWorkspaceDirectory(s))
+    if (!isLegacySyncEvent(event)) {
+      handleNetworkEvent(event.type as string, event.properties as any, this.client, (s) => this.getWorkspaceDirectory(s))
+    }
 
-    const msg = mapSSEEventToWebviewMessage(event, sessionID)
+    const msg = isLegacySyncEvent(event)
+      ? this.mapSyncEventToWebviewMessage(event)
+      : mapSSEEventToWebviewMessage(event, sessionID)
     if (!msg) return
     if (msg.type === "partUpdated") {
       this.streams.push({ ...msg, part: this.slimPart(msg.part) })

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "bun:test"
+import { describe, it, expect, spyOn } from "bun:test"
 
 // vscode mock is provided by the shared preload (tests/setup/vscode-mock.ts)
-const { KiloProvider } = await import("../../src/KiloProvider")
+const { KiloProvider, unwrapSyncEvent } = await import("../../src/KiloProvider")
 
 type State = "connecting" | "connected" | "disconnected" | "error"
 
@@ -33,6 +33,18 @@ function mkMessage(id: string, role: "user" | "assistant", time = 0) {
   }
 }
 
+function mkSession(revert?: { messageID: string } | null) {
+  return {
+    id: "s1",
+    title: "Session",
+    version: "1",
+    projectID: "project",
+    directory: "/repo",
+    time: { created: 1, updated: 1 },
+    revert,
+  }
+}
+
 function mkResult(items: unknown[]) {
   return { data: items, response: { headers: new Headers() } }
 }
@@ -41,14 +53,34 @@ function createClient(options?: {
   messagesDeferred?: Deferred<{ data: unknown[]; response: { headers: Headers } }>
   messagesData?: unknown[]
   deleteDeferred?: Deferred<unknown>
+  revertDeferred?: Deferred<{ data?: unknown; error?: unknown }>
+  sessionData?: unknown
+  sessionGet?: () => Promise<{ data: unknown }>
 }) {
   const calls: { before?: string; limit?: number }[] = []
+  const prompted: Array<Record<string, unknown>> = []
+  const reverted: Array<Record<string, unknown>> = []
   return {
     calls,
+    prompted,
+    reverted,
     session: {
       list: async () => ({ data: [] }),
-      get: async () => ({ data: null }),
+      get: async () => {
+        if (options?.sessionGet) return options.sessionGet()
+        return { data: options?.sessionData ?? null }
+      },
       status: async () => ({ data: {} }),
+      revert: async (params: Record<string, unknown>) => {
+        reverted.push(params)
+        if (options?.revertDeferred) return options.revertDeferred.promise
+        return { data: mkSession({ messageID: String(params.messageID) }) }
+      },
+      unrevert: async () => ({ data: mkSession(null) }),
+      promptAsync: async (params: Record<string, unknown>) => {
+        prompted.push(params)
+        return { data: undefined }
+      },
       messages: async (params: { before?: string; limit?: number }) => {
         calls.push({ before: params.before, limit: params.limit })
         if (options?.messagesDeferred) return options.messagesDeferred.promise
@@ -97,7 +129,17 @@ function createConnection(client: ReturnType<typeof createClient>) {
 type ProviderInternals = {
   connectionState: State
   webview: { postMessage: (message: unknown) => Promise<unknown> } | null
+  currentSession: { id: string; directory?: string; revert?: { messageID: string } | null } | null
+  contextSessionID: string | undefined
   trackedSessionIds: Set<string>
+  checkpoints: Map<string, Promise<void>>
+  revisions: Map<string, { id: string; seq: number }>
+  checkpoint: (sid: string, run: () => Promise<void>) => void
+  gatherEditorContext: () => Promise<Record<string, never>>
+  refreshSessionDetails: (sid: string, dir: string) => void
+  handleEvent: (event: unknown) => void
+  handleRevertSession: (sid: string, messageID: string) => Promise<void>
+  handleSendMessage: (text: string, messageID?: string, sessionID?: string) => Promise<void>
   handleLoadMessages: (sid: string, opts?: { mode?: string; before?: string; limit?: number }) => Promise<void>
   handleDeleteSession: (sid: string) => Promise<void>
 }
@@ -115,6 +157,114 @@ function makeProvider(client: ReturnType<typeof createClient>) {
   }
   return { provider, internal, sent }
 }
+
+describe("KiloProvider revert ordering", () => {
+  it("unwraps the nested sync payload emitted by the live SSE endpoint", () => {
+    const event = unwrapSyncEvent({
+      type: "sync",
+      syncEvent: {
+        type: "session.updated.1",
+        id: "evt_clear",
+        seq: 0,
+        aggregateID: "sessionID",
+        data: { sessionID: "s1", info: { revert: null } },
+      },
+    })
+
+    expect(event).toEqual({
+      source: "sync",
+      id: "evt_clear",
+      seq: 0,
+      type: "session.updated",
+      properties: { sessionID: "s1", info: { revert: null } },
+    })
+  })
+
+  it("waits for an in-flight revert before submitting the replacement prompt", async () => {
+    const revert = defer<{ data?: unknown; error?: unknown }>()
+    const client = createClient({ revertDeferred: revert })
+    const { internal } = makeProvider(client)
+    internal.currentSession = mkSession()
+    internal.gatherEditorContext = async () => ({})
+
+    internal.checkpoint("s1", () => internal.handleRevertSession("s1", "m1"))
+    const send = internal.handleSendMessage("replacement", "m2", "s1")
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(client.reverted).toHaveLength(1)
+    expect(client.prompted).toHaveLength(0)
+
+    revert.resolve({ data: mkSession({ messageID: "m1" }) })
+    await send
+
+    expect(client.prompted).toHaveLength(1)
+    expect(client.prompted[0]?.sessionID).toBe("s1")
+  })
+
+  it("does not submit the replacement prompt when the revert fails", async () => {
+    const error = spyOn(console, "error").mockImplementation(() => {})
+    const revert = defer<{ data?: unknown; error?: unknown }>()
+    const client = createClient({ revertDeferred: revert })
+    const { internal, sent } = makeProvider(client)
+    internal.currentSession = mkSession()
+    internal.gatherEditorContext = async () => ({})
+
+    internal.checkpoint("s1", () => internal.handleRevertSession("s1", "m1"))
+    const send = internal.handleSendMessage("replacement", "m2", "s1")
+    await Promise.resolve()
+    revert.resolve({ error: new Error("revert failed") })
+    await send
+
+    expect(client.prompted).toHaveLength(0)
+    expect(sent).toContainEqual(expect.objectContaining({ type: "sendMessageFailed", messageID: "m2" }))
+    error.mockRestore()
+  })
+
+  it("does not restore a stale revert boundary after a newer clear update", () => {
+    const client = createClient()
+    const { internal, sent } = makeProvider(client)
+    internal.currentSession = mkSession({ messageID: "m1" })
+    internal.trackedSessionIds.add("s1")
+
+    internal.handleEvent({
+      source: "sync",
+      id: "evt_000000000002",
+      seq: 0,
+      type: "session.updated",
+      properties: { sessionID: "s1", info: { revert: null } },
+    })
+    const count = sent.length
+
+    internal.handleEvent({
+      source: "sync",
+      id: "evt_000000000001",
+      seq: 0,
+      type: "session.updated",
+      properties: { sessionID: "s1", info: { revert: { messageID: "m1" } } },
+    })
+
+    expect(internal.currentSession?.revert).toBeUndefined()
+    expect(internal.revisions.get("s1")).toEqual({ id: "evt_000000000002", seq: 0 })
+    expect(sent).toHaveLength(count)
+    expect(sent.at(-1)).toMatchObject({ type: "sessionUpdated", session: { id: "s1", revert: null } })
+  })
+
+  it("ignores a session refresh superseded by a revert response", async () => {
+    const session = defer<{ data: unknown }>()
+    const client = createClient({ sessionGet: async () => session.promise })
+    const { internal } = makeProvider(client)
+    internal.currentSession = mkSession()
+    internal.contextSessionID = "s1"
+
+    internal.refreshSessionDetails("s1", "/repo")
+    await internal.handleRevertSession("s1", "m1")
+    session.resolve({ data: mkSession() })
+    await Bun.sleep(0)
+
+    expect(internal.currentSession?.revert).toEqual({ messageID: "m1" })
+  })
+})
 
 describe("KiloProvider.handleLoadMessages / focus mode freshness", () => {
   it("refetches the tail page on focus-mode reselection and posts a reconcile snapshot", async () => {
