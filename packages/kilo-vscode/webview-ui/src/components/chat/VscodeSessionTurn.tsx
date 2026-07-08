@@ -33,6 +33,7 @@ import { useServer } from "../../context/server"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { visibleError } from "../../context/session-errors"
+import { visibleParts } from "../../context/session-queue"
 import type { ErrorDisplayProps } from "./ErrorDisplay"
 import type { Message as WebMessage } from "../../types/messages"
 
@@ -82,14 +83,20 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
 
   const parts = createMemo(() => {
     const msg = message()
-    return (data.store.part?.[msg.id] ?? emptyParts) as SDKPart[]
+    const stored = (data.store.part?.[msg.id] ?? emptyParts) as SDKPart[]
+    return visibleParts(msg.id, stored, session.revert() ?? undefined)
   })
 
   const assistantMessages = createMemo(() => props.turn.assistant as SDKAssistantMessage[])
 
-  const interrupted = createMemo(() => assistantMessages().some((m) => m.error?.name === "MessageAbortedError"))
+  const terminal = (msg: SDKAssistantMessage) => {
+    const revert = session.revert()
+    return !(revert?.partID && msg.id === revert.messageID)
+  }
 
-  const error = createMemo(() => visibleError(assistantMessages(), session.isErrorHidden))
+  const interrupted = createMemo(() => assistantMessages().some((m) => terminal(m) && m.error?.name === "MessageAbortedError"))
+
+  const error = createMemo(() => visibleError(assistantMessages().filter(terminal), session.isErrorHidden))
 
   // Diffs from message summary
   const diffs = createMemo(() => {
@@ -129,7 +136,8 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
     for (let i = msgs.length - 1; i >= 0; i--) {
       const msg = msgs[i]
       if (!msg) continue
-      const msgParts = (data.store.part?.[msg.id] ?? emptyParts) as SDKPart[]
+      const stored = (data.store.part?.[msg.id] ?? emptyParts) as SDKPart[]
+      const msgParts = visibleParts(msg.id, stored, session.revert() ?? undefined)
       for (let j = msgParts.length - 1; j >= 0; j--) {
         const part = msgParts[j]
         if (!part || part.type !== "text") continue

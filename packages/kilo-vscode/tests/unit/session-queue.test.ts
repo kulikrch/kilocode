@@ -5,8 +5,9 @@ import {
   queuedUserMessageIDs,
   stableMessageTurns,
   visibleMessages,
+  visibleParts,
 } from "../../webview-ui/src/context/session-queue"
-import type { Message } from "../../webview-ui/src/types/messages"
+import type { Message, Part } from "../../webview-ui/src/types/messages"
 
 const base = {
   sessionID: "session",
@@ -23,6 +24,8 @@ const assistant = (id: string, parentID: string, opts: Partial<Message> = {}): M
   role: "assistant",
   ...opts,
 })
+
+const part = (id: string, messageID: string): Part => ({ id, messageID, type: "text", text: id })
 
 describe("queuedUserMessageIDs", () => {
   it("keeps follow-ups queued before the first assistant exists", () => {
@@ -117,7 +120,20 @@ describe("messageTurns", () => {
       assistant("message_4", "message_3"),
     ]
 
-    expect(messageTurns(messages, "message_3").map((turn) => turn.user.id)).toEqual(["message_1"])
+    expect(messageTurns(messages, { messageID: "message_3" }).map((turn) => turn.user.id)).toEqual(["message_1"])
+  })
+
+  it("keeps the part-boundary assistant and hides later provider errors", () => {
+    const messages = [
+      user("message_1"),
+      assistant("message_2", "message_1", { error: { name: "ProviderError" } }),
+      assistant("message_3", "message_1", { error: { name: "ProviderError" } }),
+    ]
+
+    const turns = messageTurns(messages, { messageID: "message_2", partID: "part_2" })
+
+    expect(turns).toHaveLength(1)
+    expect(turns[0]?.assistant.map((msg) => msg.id)).toEqual(["message_2"])
   })
 })
 
@@ -130,13 +146,24 @@ describe("visibleMessages", () => {
       assistant("message_4", "message_3"),
     ]
 
-    expect(visibleMessages(messages, "message_3").map((msg) => msg.id)).toEqual(["message_1", "message_2"])
+    expect(visibleMessages(messages, { messageID: "message_3" }).map((msg) => msg.id)).toEqual([
+      "message_1",
+      "message_2",
+    ])
   })
 
   it("keeps leading partial assistant output", () => {
     const messages = [assistant("message_2", "message_1"), user("message_3")]
 
     expect(visibleMessages(messages).map((msg) => msg.id)).toEqual(["message_2", "message_3"])
+  })
+
+  it("keeps only parts before the partial revert boundary", () => {
+    const parts = [part("part_1", "message_2"), part("part_2", "message_2"), part("part_3", "message_2")]
+
+    expect(visibleParts("message_2", parts, { messageID: "message_2", partID: "part_2" }).map((item) => item.id)).toEqual([
+      "part_1",
+    ])
   })
 })
 

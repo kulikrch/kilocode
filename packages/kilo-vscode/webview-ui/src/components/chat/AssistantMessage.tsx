@@ -18,6 +18,7 @@ import type {
 } from "@kilocode/sdk/v2"
 import { useData } from "@kilocode/kilo-ui/context/data"
 import { useSession } from "../../context/session"
+import { visibleParts } from "../../context/session-queue"
 import { snapshotProgress } from "../../context/session-utils"
 import { QuestionDock } from "./QuestionDock"
 import { SuggestBar } from "./SuggestBar"
@@ -91,7 +92,9 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
   const parts = createMemo(() => {
     const stored = data.store.part?.[props.message.id]
     if (!stored) return []
-    return (stored as SDKPart[]).filter((part) => isRenderable(part))
+    return visibleParts(props.message.id, stored as SDKPart[], session.revert() ?? undefined).filter((part) =>
+      isRenderable(part),
+    )
   })
 
   return (

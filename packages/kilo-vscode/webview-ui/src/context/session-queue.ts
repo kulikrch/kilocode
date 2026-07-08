@@ -1,4 +1,6 @@
-import type { Message, SessionStatusInfo } from "../types/messages"
+import type { Message, SessionInfo, SessionStatusInfo } from "../types/messages"
+
+export type RevertBoundary = Pick<NonNullable<SessionInfo["revert"]>, "messageID" | "partID">
 
 export interface MessageTurn {
   id: string
@@ -42,14 +44,33 @@ function partials(messages: Message[]): MessageTurn[] {
     .map(partial)
 }
 
-export function messageTurns(messages: Message[], boundary?: string): MessageTurn[] {
+function visibleMessage(id: string, revert?: RevertBoundary) {
+  if (!revert || id < revert.messageID) return true
+  return id === revert.messageID && !!revert.partID
+}
+
+export function visibleParts<T extends { id: string }>(id: string, parts: readonly T[], revert?: RevertBoundary): T[] {
+  if (!revert || id < revert.messageID) return parts.slice()
+  if (id !== revert.messageID || !revert.partID) return []
+  const idx = parts.findIndex((part) => part.id === revert.partID)
+  return idx < 0 ? [] : parts.slice(0, idx)
+}
+
+export function messageTurns(
+  messages: Message[],
+  revert?: RevertBoundary,
+  parts?: (msg: Message) => Message["parts"],
+): MessageTurn[] {
   const result: MessageTurn[] = []
   const lead: Message[] = []
   const by = new Map<string, MessageTurn>()
+  const projected = (msg: Message) => visibleParts(msg.id, parts?.(msg) ?? msg.parts ?? [], revert)
 
   for (const msg of messages) {
+    if (!visibleMessage(msg.id, revert)) continue
     if (msg.role === "user") {
-      if (boundary && msg.id >= boundary) break
+      const visible = projected(msg)
+      if (revert?.partID && msg.id === revert.messageID && visible.length === 0) continue
       const turn = { id: msg.id, user: msg, assistant: [] }
       result.push(turn)
       by.set(msg.id, turn)
@@ -74,8 +95,12 @@ export function messageTurns(messages: Message[], boundary?: string): MessageTur
   return [...partials(lead), ...result]
 }
 
-export function visibleMessages(messages: Message[], boundary?: string): Message[] {
-  return messageTurns(messages, boundary).flatMap((turn) =>
+export function visibleMessages(
+  messages: Message[],
+  revert?: RevertBoundary,
+  parts?: (msg: Message) => Message["parts"],
+): Message[] {
+  return messageTurns(messages, revert, parts).flatMap((turn) =>
     turn.partial ? turn.assistant : [turn.user, ...turn.assistant],
   )
 }

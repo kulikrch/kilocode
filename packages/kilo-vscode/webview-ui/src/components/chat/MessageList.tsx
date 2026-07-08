@@ -82,11 +82,11 @@ export const MessageList: Component<MessageListProps> = (props) => {
   const [scrollEl, setScrollEl] = createSignal<HTMLElement>()
   const positions = new Map<string, { top: number; userScrolled: boolean }>()
 
-  const boundary = () => session.revert()?.messageID
+  const revert = () => session.revert() ?? undefined
   const turns = createMemo((prev: MessageTurn[] | undefined) =>
-    stableMessageTurns(messageTurns(session.messages(), boundary()), prev),
+    stableMessageTurns(messageTurns(session.messages(), revert(), (msg) => session.getParts(msg.id)), prev),
   )
-  const isEmpty = () => turns().length === 0 && !session.loading() && !boundary()
+  const isEmpty = () => turns().length === 0 && !session.loading() && !revert()
 
   const recent = createMemo(() =>
     [...session.sessions()]
@@ -244,7 +244,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
                 }}
               </Virtualizer>
             </Show>
-            <Show when={boundary()}>
+            <Show when={revert()}>
               <RevertBanner />
             </Show>
             <For each={queuedTurns()}>{(turn) => <VscodeSessionTurn turn={turn} queued />}</For>
