@@ -54,16 +54,19 @@ function createClient(options?: {
   messagesData?: unknown[]
   deleteDeferred?: Deferred<unknown>
   revertDeferred?: Deferred<{ data?: unknown; error?: unknown }>
+  unrevertDeferred?: Deferred<{ data?: unknown; error?: unknown }>
   sessionData?: unknown
   sessionGet?: () => Promise<{ data: unknown }>
 }) {
   const calls: { before?: string; limit?: number }[] = []
   const prompted: Array<Record<string, unknown>> = []
   const reverted: Array<Record<string, unknown>> = []
+  const unreverted: Array<Record<string, unknown>> = []
   return {
     calls,
     prompted,
     reverted,
+    unreverted,
     session: {
       list: async () => ({ data: [] }),
       get: async () => {
@@ -76,7 +79,11 @@ function createClient(options?: {
         if (options?.revertDeferred) return options.revertDeferred.promise
         return { data: mkSession({ messageID: String(params.messageID) }) }
       },
-      unrevert: async () => ({ data: mkSession(null) }),
+      unrevert: async (params: Record<string, unknown>) => {
+        unreverted.push(params)
+        if (options?.unrevertDeferred) return options.unrevertDeferred.promise
+        return { data: mkSession(null) }
+      },
       promptAsync: async (params: Record<string, unknown>) => {
         prompted.push(params)
         return { data: undefined }
@@ -139,6 +146,7 @@ type ProviderInternals = {
   refreshSessionDetails: (sid: string, dir: string) => void
   handleEvent: (event: unknown) => void
   handleRevertSession: (sid: string, messageID: string) => Promise<void>
+  handleUnrevertSession: (sid: string) => Promise<void>
   handleSendMessage: (text: string, messageID?: string, sessionID?: string) => Promise<void>
   handleLoadMessages: (sid: string, opts?: { mode?: string; before?: string; limit?: number }) => Promise<void>
   handleDeleteSession: (sid: string) => Promise<void>
@@ -219,6 +227,54 @@ describe("KiloProvider revert ordering", () => {
     expect(client.prompted).toHaveLength(0)
     expect(sent).toContainEqual(expect.objectContaining({ type: "sendMessageFailed", messageID: "m2" }))
     error.mockRestore()
+  })
+
+  it("serializes a user revert, redo, and replacement prompt through one backend checkpoint chain", async () => {
+    const revert = defer<{ data?: unknown; error?: unknown }>()
+    const redo = defer<{ data?: unknown; error?: unknown }>()
+    const client = createClient({ revertDeferred: revert, unrevertDeferred: redo })
+    const { internal, sent } = makeProvider(client)
+    internal.currentSession = mkSession()
+    internal.gatherEditorContext = async () => ({})
+
+    internal.checkpoint("s1", () => internal.handleRevertSession("s1", "m1"))
+    internal.checkpoint("s1", () => internal.handleUnrevertSession("s1"))
+    const send = internal.handleSendMessage("try a different implementation", "m2", "s1")
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(client.reverted).toHaveLength(1)
+    expect(client.unreverted).toHaveLength(0)
+    expect(client.prompted).toHaveLength(0)
+
+    revert.resolve({ data: mkSession({ messageID: "m1" }) })
+    await Bun.sleep(0)
+
+    expect(client.unreverted).toHaveLength(1)
+    expect(client.prompted).toHaveLength(0)
+
+    redo.resolve({ data: mkSession(null) })
+    await send
+
+    expect(client.prompted).toHaveLength(1)
+    expect(client.prompted[0]).toMatchObject({
+      sessionID: "s1",
+      directory: "/repo",
+      messageID: "m2",
+      parts: [{ type: "text", text: "try a different implementation" }],
+    })
+    expect(sent).toContainEqual(
+      expect.objectContaining({
+        type: "sessionUpdated",
+        session: expect.objectContaining({ revert: { messageID: "m1" } }),
+      }),
+    )
+    expect(sent).toContainEqual(
+      expect.objectContaining({
+        type: "sessionUpdated",
+        session: expect.objectContaining({ revert: null }),
+      }),
+    )
   })
 
   it("does not restore a stale revert boundary after a newer clear update", () => {
