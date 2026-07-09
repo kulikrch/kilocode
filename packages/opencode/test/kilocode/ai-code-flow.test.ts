@@ -1,6 +1,8 @@
 import { describe, expect, it, spyOn } from "bun:test"
 import { Telemetry } from "@kilocode/kilo-telemetry"
+import path from "path"
 import { KiloAiCodeFlow } from "../../src/kilocode/telemetry/ai-code-flow"
+import { tmpdir } from "../fixture/fixture"
 
 describe("KiloAiCodeFlow", () => {
   it("counts added characters from unified diff additions", () => {
@@ -156,5 +158,32 @@ describe("KiloAiCodeFlow", () => {
     } finally {
       spy.mockRestore()
     }
+  })
+
+  it("stores agent contributions in the repository git directory", async () => {
+    await using dir = await tmpdir({ git: true })
+    const file = path.join(dir.path, "src", "agent.ts")
+    await Bun.write(file, "export const value = 1\n")
+
+    await KiloAiCodeFlow.record([
+      {
+        file,
+        patch: ["--- /dev/null", "+++ b/src/agent.ts", "@@ -0,0 +1 @@", "+export const value = 1"].join("\n"),
+        additions: 1,
+        deletions: 0,
+        status: "added",
+      },
+    ])
+
+    const records = await Bun.file(path.join(dir.path, ".git", "kilo-ai-contributions.json")).json()
+    expect(records).toMatchObject([
+      {
+        repo: dir.path.replace(/\\/g, "/"),
+        file: "src/agent.ts",
+        source: "agent",
+        chars: 22,
+        lines: 1,
+      },
+    ])
   })
 })

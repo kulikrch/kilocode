@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 import * as path from "path"
+import * as fs from "fs/promises"
 import { createHash } from "crypto"
 import { execFile } from "child_process"
 import { promisify } from "util"
@@ -45,6 +46,7 @@ const version = 1
 const cutoffKey = "kilo.aiRatio.cutoff"
 const processedKey = "kilo.aiRatio.processed"
 const recordsKey = "kilo.aiRatio.records"
+const diskKey = "kilo-ai-contributions.json"
 
 function percent(value: number, total: number) {
   if (total <= 0) return 0
@@ -187,7 +189,10 @@ export class CommitAiRatioCalculator implements vscode.Disposable {
   private async analyze(root: string) {
     const cutoff = this.context.globalState.get<number>(cutoffKey, Date.now())
     const processed = this.context.globalState.get<{ [key: string]: true }>(processedKey, {})
-    const records = this.context.globalState.get<Contribution[]>(recordsKey, []).filter((item) => item.repo === root)
+    const records = [
+      ...this.context.globalState.get<Contribution[]>(recordsKey, []),
+      ...(await this.disk(root)),
+    ].filter((item) => item.repo === root)
     const email = await this.git(root, ["config", "user.email"]).catch(() => "")
     const name = await this.git(root, ["config", "user.name"]).catch(() => "")
     const raw = await this.git(root, [
@@ -220,6 +225,29 @@ export class CommitAiRatioCalculator implements vscode.Disposable {
     const parsed = Date.parse(time)
     if (!Number.isFinite(parsed)) return cutoff
     return Math.max(cutoff, parsed)
+  }
+
+  private async disk(root: string): Promise<Contribution[]> {
+    const dir = await this.git(root, ["rev-parse", "--git-dir"]).catch(() => "")
+    if (!dir) return []
+    const target = path.join(path.isAbsolute(dir) ? dir : path.join(root, dir), diskKey)
+    const parsed = await fs
+      .readFile(target, "utf8")
+      .then((raw) => JSON.parse(raw) as unknown)
+      .catch(() => [])
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((item): item is Contribution => {
+      if (!item || typeof item !== "object") return false
+      const record = item as Partial<Contribution>
+      return (
+        typeof record.repo === "string" &&
+        typeof record.file === "string" &&
+        (record.source === "inline" || record.source === "agent" || record.source === "ask") &&
+        typeof record.chars === "number" &&
+        typeof record.lines === "number" &&
+        typeof record.time === "number"
+      )
+    })
   }
 
   dispose() {

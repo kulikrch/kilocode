@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test"
 import * as vscode from "vscode"
+import * as fs from "fs/promises"
+import * as os from "os"
+import * as path from "path"
 import {
   CommitAiRatioCalculator,
   build,
@@ -61,6 +64,20 @@ function fake(responses: { log: string; diffs: { [key: string]: string }; parent
     if (args.join(" ") === "config user.name") return "Kilo User"
     if (args[0] === "log") return responses.log
     if (args[0] === "show" && args.includes("--format=%P")) return responses.parents?.[args.at(-1) ?? ""] ?? "parent"
+    if (args[0] === "show" && args.includes("--format=%aI")) return "2026-07-09T11:00:00.000Z"
+    if (args[0] === "show") return responses.diffs[args.at(-1) ?? ""] ?? ""
+    return ""
+  }
+}
+
+function fakeRoot(root: string, responses: { log: string; diffs: { [key: string]: string } }) {
+  return async (_dir: string, args: string[]) => {
+    if (args[0] === "rev-parse" && args[1] === "--show-toplevel") return root
+    if (args[0] === "rev-parse" && args[1] === "--git-dir") return path.join(root, ".git")
+    if (args.join(" ") === "config user.email") return "kilo@example.com"
+    if (args.join(" ") === "config user.name") return "Kilo User"
+    if (args[0] === "log") return responses.log
+    if (args[0] === "show" && args.includes("--format=%P")) return "parent"
     if (args[0] === "show" && args.includes("--format=%aI")) return "2026-07-09T11:00:00.000Z"
     if (args[0] === "show") return responses.diffs[args.at(-1) ?? ""] ?? ""
     return ""
@@ -207,6 +224,47 @@ describe("commit ai ratio calculator", () => {
     } finally {
       calc.dispose()
       reset()
+    }
+  })
+
+  it("uses agent contributions persisted in the git directory", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-ratio-"))
+    await fs.mkdir(path.join(root, ".git"))
+    await fs.writeFile(
+      path.join(root, ".git", "kilo-ai-contributions.json"),
+      JSON.stringify([
+        {
+          repo: root.replace(/\\/g, "/"),
+          file: "src/a.ts",
+          source: "agent",
+          chars: 5,
+          lines: 1,
+          time: Date.parse("2026-07-09T11:30:00.000Z"),
+        },
+      ]),
+    )
+    const reset = workspace(root)
+    const captures: unknown[] = []
+    const ctx = context({ "kilo.aiRatio.cutoff": Date.parse("2026-07-09T10:00:00.000Z") })
+    const log = "abc\tKilo User\tkilo@example.com\t2026-07-09T12:00:00.000Z"
+    const calc = new CommitAiRatioCalculator(
+      ctx,
+      { capture: (_event: string, props?: Record<string, unknown>) => captures.push(props) } as never,
+      fakeRoot(root, { log, diffs: { abc: diff("1234567890") } }),
+    )
+    try {
+      await calc.run()
+
+      expect(captures[0]).toMatchObject({
+        commit_hash: "abc",
+        agent_lines: 1,
+        agent_percent: 50,
+        ai_percent: 50,
+      })
+    } finally {
+      calc.dispose()
+      reset()
+      await fs.rm(root, { recursive: true, force: true })
     }
   })
 })
