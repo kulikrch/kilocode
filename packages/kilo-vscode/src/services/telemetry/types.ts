@@ -13,6 +13,7 @@ export enum TelemetryEventName {
   LLM_COMPLETION = "LLM Completion",
   CONTEXT_CONDENSED = "Context Condensed",
   SLIDING_WINDOW_TRUNCATION = "Sliding Window Truncation",
+  AI_CODE_FLOW = "ai_code_flow",
 
   // Tools & Modes
   TOOL_USED = "Tool Used",

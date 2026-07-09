@@ -34,6 +34,7 @@ import { shouldSkipAutocomplete } from "./contextualSkip"
 import { FileIgnoreController } from "../shims/FileIgnoreController"
 import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 import { ErrorBackoff } from "./ErrorBackoff"
+import { AiCodeFlowMetrics } from "../../telemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -107,6 +108,8 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
   if (text === "") {
     return []
   }
+
+  AiCodeFlowMetrics.markAi(text)
 
   const item = new vscode.InlineCompletionItem(text, new vscode.Range(position, position), {
     command: INLINE_COMPLETION_ACCEPTED_COMMAND,

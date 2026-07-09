@@ -17,6 +17,7 @@ import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import { EncodedIO } from "../kilocode/tool/encoded-io" // kilocode_change
 import { Format } from "../format"
+import { KiloAiCodeFlow } from "@/kilocode/telemetry/ai-code-flow" // kilocode_change
 
 const PatchParams = z.object({
   patchText: z.string().describe("The full patch text that describes all changes to be made"),
@@ -251,6 +252,20 @@ export const ApplyPatchTool = Tool.define(
       for (const update of updates) {
         yield* bus.publish(FileWatcher.Event.Updated, update)
       }
+
+      KiloAiCodeFlow.track({
+        diffs: fileChanges.map((change) => ({
+          file: change.movePath ?? change.filePath,
+          patch: change.diff,
+          additions: change.additions,
+          deletions: change.deletions,
+          status: change.type === "add" ? "added" : change.type === "delete" ? "deleted" : "modified",
+        })),
+        sessionID: ctx.sessionID,
+        messageID: ctx.messageID,
+        source: "tool",
+        tool: "apply_patch",
+      }) // kilocode_change
 
       // Notify LSP of file changes and collect diagnostics
       for (const change of fileChanges) {

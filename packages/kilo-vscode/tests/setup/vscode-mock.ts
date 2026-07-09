@@ -41,6 +41,10 @@ const mockVscode = {
     machineId: "test-machine",
     isTelemetryEnabled: false,
     shell: "/bin/bash",
+    clipboard: {
+      readText: async () => "",
+      writeText: async () => {},
+    },
     openExternal: noop,
   },
   version: "1.90.0",
@@ -50,6 +54,7 @@ const mockVscode = {
       get: <T>(_key: string, value?: T) => value,
       update: async () => {},
     }),
+    onDidChangeTextDocument: () => ({ dispose: noop }),
     asRelativePath: (pathOrUri: string) => pathOrUri,
     fs: {
       createDirectory: async () => {},

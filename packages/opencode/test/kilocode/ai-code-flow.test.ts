@@ -1,45 +1,31 @@
-import { describe, expect, test } from "bun:test"
-import { KiloAiCodeFlow } from "../../src/kilocode/snapshot/ai-code-flow"
-import type { Snapshot } from "../../src/snapshot"
-
-function diff(patch: string): Snapshot.FileDiff {
-  return {
-    file: "src/app.ts",
-    patch,
-    additions: 0,
-    deletions: 0,
-    status: "modified",
-  }
-}
+import { describe, expect, it } from "bun:test"
+import { KiloAiCodeFlow } from "../../src/kilocode/telemetry/ai-code-flow"
 
 describe("KiloAiCodeFlow", () => {
-  test("counts added patch payload characters", () => {
-    const chars = KiloAiCodeFlow.chars(
-      diff(
-        [
-          "diff --git a/src/app.ts b/src/app.ts",
-          "--- a/src/app.ts",
-          "+++ b/src/app.ts",
-          "@@ -1 +1,3 @@",
-          " const a = 1",
-          "+const b = 2",
-          "+",
-          "+return a + b",
-          "-return a",
-        ].join("\n"),
-      ),
-    )
+  it("counts added characters from unified diff additions", () => {
+    const patch = [
+      "diff --git a/example.ts b/example.ts",
+      "index 1111111..2222222 100644",
+      "--- a/example.ts",
+      "+++ b/example.ts",
+      "@@ -1 +1,2 @@",
+      " const kept = true",
+      "+const added = 123",
+      "+return added",
+    ].join("\n")
 
-    expect(chars).toBe("const b = 2".length + "return a + b".length)
+    expect(KiloAiCodeFlow.chars({ patch })).toBe(29)
   })
 
-  test("sums multiple file diffs and ignores metadata-only patches", () => {
-    expect(
-      KiloAiCodeFlow.total([
-        diff("+++ b/a.ts\n+alpha"),
-        diff("+++ b/b.ts\n+beta\n context\n-gamma"),
-        diff(""),
-      ]),
-    ).toBe("alpha".length + "beta".length)
+  it("ignores diff headers and deleted lines", () => {
+    const patch = [
+      "--- a/example.ts",
+      "+++ b/example.ts",
+      "@@ -1 +1 @@",
+      "-old",
+      "+new",
+    ].join("\n")
+
+    expect(KiloAiCodeFlow.chars({ patch })).toBe(3)
   })
 })

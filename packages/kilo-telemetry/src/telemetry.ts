@@ -178,6 +178,7 @@ export namespace Telemetry {
     additions?: number
     deletions?: number
     source?: string
+    tool?: string
   }) {
     const ai = Math.max(0, Math.trunc(input.aiChars))
     const manual = Math.max(0, Math.trunc(input.manualChars ?? 0))
@@ -196,6 +197,7 @@ export namespace Telemetry {
       additions: input.additions,
       deletions: input.deletions,
       source: input.source,
+      tool: input.tool,
     })
   }
 

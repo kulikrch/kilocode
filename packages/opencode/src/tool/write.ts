@@ -16,6 +16,7 @@ import { assertExternalDirectoryEffect } from "./external-directory"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import { EncodedIO } from "../kilocode/tool/encoded-io" // kilocode_change
+import { KiloAiCodeFlow } from "@/kilocode/telemetry/ai-code-flow" // kilocode_change
 
 const MAX_PROJECT_DIAGNOSTICS_FILES = 5
 
@@ -62,6 +63,13 @@ export const WriteTool = Tool.define(
 
           yield* EncodedIO.write(filepath, params.content, encoding) // kilocode_change - preserve encoding; replaces fs.writeWithDirs
           yield* format.file(filepath)
+          KiloAiCodeFlow.track({
+            diffs: [filediff],
+            sessionID: ctx.sessionID,
+            messageID: ctx.messageID,
+            source: "tool",
+            tool: "write",
+          }) // kilocode_change
           yield* bus.publish(File.Event.Edited, { file: filepath })
           yield* bus.publish(FileWatcher.Event.Updated, {
             file: filepath,

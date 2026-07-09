@@ -19,7 +19,6 @@ import type { Provider } from "@/provider"
 import { Question } from "@/question"
 import { KiloSessionProcessor } from "@/kilocode/session/processor" // kilocode_change
 import { Suggestion } from "@/kilocode/suggestion" // kilocode_change
-import { KiloAiCodeFlow } from "@/kilocode/snapshot/ai-code-flow" // kilocode_change
 import { errorMessage } from "@/util/error"
 import { Log } from "@/util"
 import { isRecord } from "@/util/record"
@@ -458,16 +457,6 @@ export const layer: Layer.Layer<
                   hash: patch.hash,
                   files: patch.files,
                 })
-                // kilocode_change start - report AI-generated code chars from checkpoint diffs
-                if (completedSnapshot) {
-                  const diffs = yield* snapshot.diffFull(ctx.snapshot, completedSnapshot)
-                  KiloAiCodeFlow.track({
-                    sessionID: ctx.sessionID,
-                    messageID: ctx.assistantMessage.id,
-                    diffs,
-                  })
-                }
-                // kilocode_change end
               }
               ctx.snapshot = undefined
             }

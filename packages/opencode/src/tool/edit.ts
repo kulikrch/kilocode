@@ -21,6 +21,7 @@ import { AppFileSystem } from "@opencode-ai/shared/filesystem"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change
 import { ConfigValidation } from "../kilocode/config-validation" // kilocode_change
 import { EncodedIO } from "../kilocode/tool/encoded-io" // kilocode_change
+import { KiloAiCodeFlow } from "@/kilocode/telemetry/ai-code-flow" // kilocode_change
 
 const MAX_DIFF_CONTENT = 500_000 // kilocode_change
 
@@ -179,6 +180,13 @@ export const EditTool = Tool.define(
           }).pipe(Effect.orDie)
 
           const filediff: Snapshot.FileDiff = cachedFilediff ?? buildFileDiff(filePath, contentOld, contentNew) // kilocode_change
+          KiloAiCodeFlow.track({
+            diffs: [filediff],
+            sessionID: ctx.sessionID,
+            messageID: ctx.messageID,
+            source: "tool",
+            tool: "edit",
+          }) // kilocode_change
 
           yield* ctx.metadata({
             metadata: {
