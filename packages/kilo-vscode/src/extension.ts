@@ -13,7 +13,7 @@ import { registerAutocompleteProvider } from "./services/autocomplete"
 import { ensureBackendForAutocomplete } from "./services/autocomplete/ensure-backend"
 import { AutocompleteServiceManager } from "./services/autocomplete/AutocompleteServiceManager"
 import { BrowserAutomationService } from "./services/browser-automation"
-import { AiCodeFlowMetrics, TelemetryProxy } from "./services/telemetry"
+import { AiCodeFlowMetrics, CommitAiRatioCalculator, TelemetryProxy } from "./services/telemetry"
 import { registerCommitMessageService } from "./services/commit-message"
 import { registerCodeActions, registerTerminalActions, KiloCodeActionProvider } from "./services/code-actions"
 import { registerToggleAutoApprove } from "./commands/toggle-auto-approve"
@@ -28,7 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   console.log("Kilo Code extension is now active")
 
   const telemetry = TelemetryProxy.getInstance()
-  new AiCodeFlowMetrics(telemetry).register(context)
+  const ratio = new CommitAiRatioCalculator(context, telemetry)
+  ratio.register()
+  new AiCodeFlowMetrics(telemetry, ratio).register(context)
 
   // Create shared connection service (one server for all webviews)
   const connectionService = new KiloConnectionService(context)

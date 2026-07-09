@@ -66,6 +66,7 @@ describe("TelemetryEvent", () => {
     expect(TelemetryEvent.TOOL_USED).toBeDefined()
     expect(TelemetryEvent.AGENT_USED).toBeDefined()
     expect(String(TelemetryEvent.AI_CODE_FLOW)).toBe("ai_code_flow")
+    expect(String(TelemetryEvent.GIT_COMMIT_AI_CONTRIBUTION)).toBe("git.commit.ai_contribution")
   })
 
   test("ai code flow helper is safe before telemetry init", () => {
@@ -75,6 +76,23 @@ describe("TelemetryEvent", () => {
         manualChars: -1,
         ideChars: 2,
         pastedChars: 3,
+      }),
+    ).not.toThrow()
+  })
+
+  test("git commit ai contribution helper is safe before telemetry init", () => {
+    expect(() =>
+      Telemetry.trackGitCommitAiContribution({
+        commitHash: "abc",
+        commitWholeLines: 10,
+        inlineLines: 2,
+        agentLines: 3,
+        askLines: 0,
+        aiPercent: 50,
+        inlinePercent: 20,
+        agentPercent: 30,
+        askPercent: 0,
+        analyzerVersion: 1,
       }),
     ).not.toThrow()
   })

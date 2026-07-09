@@ -201,6 +201,32 @@ export namespace Telemetry {
     })
   }
 
+  export function trackGitCommitAiContribution(input: {
+    commitHash: string
+    commitWholeLines: number
+    inlineLines: number
+    agentLines: number
+    askLines: number
+    aiPercent: number
+    inlinePercent: number
+    agentPercent: number
+    askPercent: number
+    analyzerVersion: number
+  }) {
+    track(TelemetryEvent.GIT_COMMIT_AI_CONTRIBUTION, {
+      commit_hash: input.commitHash,
+      commit_whole_lines: Math.max(0, Math.trunc(input.commitWholeLines)),
+      inline_lines: Math.max(0, Math.trunc(input.inlineLines)),
+      agent_lines: Math.max(0, Math.trunc(input.agentLines)),
+      ask_lines: Math.max(0, Math.trunc(input.askLines)),
+      ai_percent: Math.max(0, input.aiPercent),
+      inline_percent: Math.max(0, input.inlinePercent),
+      agent_percent: Math.max(0, input.agentPercent),
+      ask_percent: Math.max(0, input.askPercent),
+      analyzer_version: input.analyzerVersion,
+    })
+  }
+
   // Share
   export function trackShareCreated(sessionId: string) {
     track(TelemetryEvent.SHARE_CREATED, { sessionId })
