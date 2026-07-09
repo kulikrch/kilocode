@@ -32,6 +32,32 @@ function setClipboard(text: string) {
   }
 }
 
+function registered() {
+  const previous = vscode.workspace.onDidChangeTextDocument
+  const listeners: Array<(input: unknown) => void> = []
+  ;(vscode.workspace as { onDidChangeTextDocument: (listener: (input: unknown) => void) => vscode.Disposable })
+    .onDidChangeTextDocument = (listener) => {
+    listeners.push(listener)
+    return { dispose: () => {} } as vscode.Disposable
+  }
+  const context = { subscriptions: [] as vscode.Disposable[] }
+  const state = create()
+  state.metrics.register(context as vscode.ExtensionContext)
+  return {
+    ...state,
+    emit: async (input: unknown) => {
+      for (const listener of listeners) listener(input)
+      await Promise.resolve()
+      await Promise.resolve()
+    },
+    dispose: () => {
+      state.metrics.dispose()
+      for (const item of context.subscriptions) item.dispose()
+      ;(vscode.workspace as { onDidChangeTextDocument: typeof previous }).onDidChangeTextDocument = previous
+    },
+  }
+}
+
 describe("ai code flow metrics", () => {
   it("counts single character edits as manual input", () => {
     expect(classify("x")).toEqual({ ai: 0, manual: 1, ide: 0, pasted: 0 })
@@ -200,6 +226,77 @@ describe("ai code flow metrics", () => {
       expect(captures[0]?.properties).toMatchObject({ manual_chars: 1, total_chars: 1 })
     } finally {
       metrics.dispose()
+    }
+  })
+
+  it("runs through the registered VS Code listener for a realistic editing session", async () => {
+    const reset = setClipboard("")
+    const flow = registered()
+    try {
+      await flow.emit(event([change("f"), change("n")]))
+
+      AiCodeFlowMetrics.markAi(" generatedCall()")
+      await flow.emit(event([change(" generatedCall()")]))
+
+      reset()
+      const paste = setClipboard("const pasted = true")
+      await flow.emit(event([change("const pasted = true")]))
+      paste()
+
+      await flow.emit(event([change("replacement", 4), change("\n    ")]))
+      flow.metrics.flush()
+
+      expect(flow.captures).toEqual([
+        {
+          event: "ai_code_flow",
+          properties: {
+            ai_chars: 16,
+            manual_chars: 3,
+            ide_chars: 11,
+            pasted_chars: 19,
+            total_chars: 38,
+            repo_name: null,
+            source: "vscode_document",
+          },
+        },
+      ])
+    } finally {
+      flow.dispose()
+      reset()
+    }
+  })
+
+  it("separates two work periods with a flush between agent turns", async () => {
+    const flow = registered()
+    try {
+      await flow.emit(event([change("a")]))
+      AiCodeFlowMetrics.markAi("firstCompletion")
+      await flow.emit(event([change("firstCompletion")]))
+      flow.metrics.flush()
+
+      const paste = setClipboard("second paste")
+      await flow.emit(event([change("second paste")]))
+      paste()
+      await flow.emit(event([change("z")]))
+      AiCodeFlowMetrics.markAi("secondCompletion")
+      await flow.emit(event([change("secondCompletion")]))
+      flow.metrics.flush()
+
+      expect(flow.captures).toHaveLength(2)
+      expect(flow.captures[0]?.properties).toMatchObject({
+        ai_chars: 15,
+        manual_chars: 1,
+        pasted_chars: 0,
+        total_chars: 16,
+      })
+      expect(flow.captures[1]?.properties).toMatchObject({
+        ai_chars: 16,
+        manual_chars: 1,
+        pasted_chars: 12,
+        total_chars: 29,
+      })
+    } finally {
+      flow.dispose()
     }
   })
 })

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it, spyOn } from "bun:test"
+import { Telemetry } from "@kilocode/kilo-telemetry"
 import { KiloAiCodeFlow } from "../../src/kilocode/telemetry/ai-code-flow"
 
 describe("KiloAiCodeFlow", () => {
@@ -60,5 +61,100 @@ describe("KiloAiCodeFlow", () => {
 
   it("returns zero for empty patches", () => {
     expect(KiloAiCodeFlow.chars({ patch: "" })).toBe(0)
+  })
+
+  it("tracks sequential agent tool changes with session context", () => {
+    const spy = spyOn(Telemetry, "trackAiCodeFlow").mockImplementation(() => {})
+    try {
+      KiloAiCodeFlow.track({
+        diffs: [
+          {
+            file: "src/new.ts",
+            patch: ["--- /dev/null", "+++ b/src/new.ts", "@@ -0,0 +1 @@", "+export const value = 1"].join("\n"),
+            additions: 1,
+            deletions: 0,
+            status: "added",
+          },
+        ],
+        sessionID: "ses_1",
+        messageID: "msg_1",
+        source: "tool",
+        tool: "write",
+      })
+
+      KiloAiCodeFlow.track({
+        diffs: [
+          {
+            file: "src/new.ts",
+            patch: ["--- a/src/new.ts", "+++ b/src/new.ts", "@@ -1 +1,2 @@", " export const value = 1", "+value"].join(
+              "\n",
+            ),
+            additions: 1,
+            deletions: 0,
+            status: "modified",
+          },
+          {
+            file: "src/other.ts",
+            patch: ["--- a/src/other.ts", "+++ b/src/other.ts", "@@ -1 +1 @@", "-old", "+newer"].join("\n"),
+            additions: 1,
+            deletions: 1,
+            status: "modified",
+          },
+        ],
+        sessionID: "ses_1",
+        messageID: "msg_2",
+        source: "tool",
+        tool: "apply_patch",
+      })
+
+      expect(spy).toHaveBeenCalledTimes(2)
+      expect(spy.mock.calls[0]?.[0]).toMatchObject({
+        aiChars: 22,
+        sessionId: "ses_1",
+        messageId: "msg_1",
+        files: 1,
+        additions: 1,
+        deletions: 0,
+        source: "tool",
+        tool: "write",
+      })
+      expect(spy.mock.calls[1]?.[0]).toMatchObject({
+        aiChars: 10,
+        sessionId: "ses_1",
+        messageId: "msg_2",
+        files: 2,
+        additions: 2,
+        deletions: 1,
+        source: "tool",
+        tool: "apply_patch",
+      })
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("does not track agent tool calls that only remove code", () => {
+    const spy = spyOn(Telemetry, "trackAiCodeFlow").mockImplementation(() => {})
+    try {
+      KiloAiCodeFlow.track({
+        diffs: [
+          {
+            file: "src/remove.ts",
+            patch: ["--- a/src/remove.ts", "+++ /dev/null", "@@ -1 +0,0 @@", "-removed()"].join("\n"),
+            additions: 0,
+            deletions: 1,
+            status: "deleted",
+          },
+        ],
+        sessionID: "ses_1",
+        messageID: "msg_3",
+        source: "tool",
+        tool: "edit",
+      })
+
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
