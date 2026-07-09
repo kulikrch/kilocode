@@ -28,4 +28,37 @@ describe("KiloAiCodeFlow", () => {
 
     expect(KiloAiCodeFlow.chars({ patch })).toBe(3)
   })
+
+  it("sums generated characters across multiple tool diffs", () => {
+    const write = ["--- /dev/null", "+++ b/new.ts", "@@ -0,0 +1,2 @@", "+export const a = 1", "+export const b = 2"].join(
+      "\n",
+    )
+    const edit = ["--- a/existing.ts", "+++ b/existing.ts", "@@ -1 +1,2 @@", "-old()", "+new()", "+extra()"].join(
+      "\n",
+    )
+
+    expect(KiloAiCodeFlow.total([{ patch: write }, { patch: edit }])).toBe(48)
+  })
+
+  it("handles CRLF patches from Windows git output", () => {
+    const patch = [
+      "--- a/example.ts",
+      "+++ b/example.ts",
+      "@@ -1 +1,2 @@",
+      "+const crlf = true",
+      "+done()",
+    ].join("\r\n")
+
+    expect(KiloAiCodeFlow.chars({ patch })).toBe(23)
+  })
+
+  it("does not count pure deletions as generated code", () => {
+    const patch = ["--- a/example.ts", "+++ /dev/null", "@@ -1,2 +0,0 @@", "-remove()", "-alsoRemove()"].join("\n")
+
+    expect(KiloAiCodeFlow.chars({ patch })).toBe(0)
+  })
+
+  it("returns zero for empty patches", () => {
+    expect(KiloAiCodeFlow.chars({ patch: "" })).toBe(0)
+  })
 })

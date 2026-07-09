@@ -44,15 +44,20 @@ function takeMarked(text: string, now = Date.now()) {
   return false
 }
 
-export function classify(text: string, clipboard = "", now = Date.now()): Counters {
+export function classify(text: string, clipboard = "", now = Date.now(), replaced = 0): Counters {
   if (!text) return empty()
-  if (takeMarked(text, now)) return { ...empty(), ai: text.length }
-  if (clipboard && text === clipboard) return { ...empty(), pasted: text.length }
-  if (text === "\n" || text === "\r\n") return { ...empty(), manual: text.length }
+  const length = Math.max(0, text.length - replaced)
+  if (length <= 0) return empty()
+  if (takeMarked(text, now)) return { ...empty(), ai: length }
+  if (clipboard && text === clipboard) return { ...empty(), pasted: length }
+  if (text === "\n" || text === "\r\n") return { ...empty(), manual: length }
   const indent = /^(\r?\n)([ \t]+)$/.exec(text)
-  if (indent) return { ...empty(), manual: indent[1]!.length, ide: indent[2]!.length }
-  if (text.length === 1) return { ...empty(), manual: 1 }
-  return { ...empty(), ide: text.length }
+  if (indent) {
+    const manual = Math.min(indent[1]!.length, length)
+    return { ...empty(), manual, ide: length - manual }
+  }
+  if (text.length === 1) return { ...empty(), manual: length }
+  return { ...empty(), ide: length }
 }
 
 export class AiCodeFlowMetrics implements vscode.Disposable {
@@ -79,11 +84,11 @@ export class AiCodeFlowMetrics implements vscode.Disposable {
 
   private async process(event: vscode.TextDocumentChangeEvent) {
     if (event.document.uri.scheme !== "file" && event.document.uri.scheme !== "untitled") return
-    const text = event.contentChanges.map((change) => change.text).filter(Boolean)
-    if (!text.length) return
+    const changes = event.contentChanges.filter((change) => change.text)
+    if (!changes.length) return
     const clipboard = await Promise.resolve(vscode.env.clipboard.readText()).catch(() => "")
-    for (const item of text) {
-      add(this.counters, classify(item, clipboard))
+    for (const change of changes) {
+      add(this.counters, classify(change.text, clipboard, Date.now(), change.rangeLength))
     }
   }
 
