@@ -9,6 +9,11 @@ import { TelemetryProxy } from "./telemetry-proxy"
 
 export type Source = "inline" | "agent" | "ask"
 
+export type Chunk = {
+  hash: string
+  chars: number
+}
+
 export type Contribution = {
   repo: string
   file: string
@@ -16,6 +21,10 @@ export type Contribution = {
   chars: number
   lines: number
   time: number
+  beforeHash?: string
+  afterHash?: string
+  patchHash?: string
+  chunks?: Chunk[]
 }
 
 export type Commit = {
@@ -97,6 +106,29 @@ export function patch(input: string) {
   )
 }
 
+export function chunks(text: string): Chunk[] {
+  return text
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0)
+    .map((line) => ({ hash: hash(line), chars: line.length }))
+}
+
+function additions(input: string) {
+  const result = new Map<string, Chunk[]>()
+  let file = ""
+  for (const line of input.split(/\r?\n/)) {
+    const match = /^\+\+\+ b\/(.+)$/.exec(line)
+    if (match) {
+      file = match[1]!
+      if (!result.has(file)) result.set(file, [])
+      continue
+    }
+    if (!file || !/^\+(?!\+)(.*)$/.test(line)) continue
+    result.get(file)?.push({ hash: hash(line.slice(1)), chars: line.slice(1).length })
+  }
+  return result
+}
+
 export function build(input: {
   commit: Commit
   patch: string
@@ -114,8 +146,31 @@ export function build(input: {
   const records = input.records.filter(
     (item) => item.time > input.from && item.time <= input.commit.time && files.has(item.file),
   )
-  const sum = (source: Source, key: "chars" | "lines") =>
-    records.filter((item) => item.source === source).reduce((total, item) => total + item[key], 0)
+  const byfile = additions(input.patch)
+  const matched = new Map<Source, { chars: number; lines: number }>()
+  for (const source of ["inline", "agent", "ask"] as const) matched.set(source, { chars: 0, lines: 0 })
+  for (const record of records) {
+    const chunks = record.chunks ?? []
+    if (!chunks.length) continue
+    const pool = byfile.get(record.file) ?? []
+    for (const chunk of chunks) {
+      const index = pool.findIndex((item) => item.hash === chunk.hash)
+      if (index === -1) continue
+      pool.splice(index, 1)
+      const source = matched.get(record.source)!
+      source.chars += chunk.chars
+      source.lines += 1
+    }
+  }
+  const sum = (source: Source, key: "chars" | "lines") => {
+    const exact = matched.get(source)!
+    return (
+      exact[key] +
+      records
+        .filter((item) => item.source === source && !item.chunks?.length)
+        .reduce((total, item) => total + item[key], 0)
+    )
+  }
   const inlineChars = sum("inline", "chars")
   const agentChars = sum("agent", "chars")
   const askChars = sum("ask", "chars")
@@ -167,6 +222,10 @@ export class CommitAiRatioCalculator implements vscode.Disposable {
         chars: Math.max(0, Math.trunc(input.chars)),
         lines: Math.max(0, Math.trunc(input.lines)),
         time: input.time ?? Date.now(),
+        beforeHash: input.beforeHash,
+        afterHash: input.afterHash,
+        patchHash: input.patchHash,
+        chunks: input.chunks,
       },
     ])
   }
@@ -245,7 +304,15 @@ export class CommitAiRatioCalculator implements vscode.Disposable {
         (record.source === "inline" || record.source === "agent" || record.source === "ask") &&
         typeof record.chars === "number" &&
         typeof record.lines === "number" &&
-        typeof record.time === "number"
+        typeof record.time === "number" &&
+        (!record.chunks ||
+          record.chunks.every(
+            (chunk) =>
+              chunk &&
+              typeof chunk === "object" &&
+              typeof chunk.hash === "string" &&
+              typeof chunk.chars === "number",
+          ))
       )
     })
   }

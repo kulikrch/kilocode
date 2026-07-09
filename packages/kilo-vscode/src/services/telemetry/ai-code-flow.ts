@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import { TelemetryEventName } from "./types"
 import { TelemetryProxy } from "./telemetry-proxy"
-import type { Source } from "./commit-ai-ratio"
+import { chunks, hash, type Chunk, type Source } from "./commit-ai-ratio"
 
 export type Counters = {
   ai: number
@@ -67,12 +67,23 @@ export function classify(text: string, clipboard = "", now = Date.now(), replace
 }
 
 type Ratio = {
-  record(input: { file: string; source: Source; chars: number; lines: number; time?: number }): Promise<void> | void
+  record(input: {
+    file: string
+    source: Source
+    chars: number
+    lines: number
+    time?: number
+    beforeHash?: string
+    afterHash?: string
+    patchHash?: string
+    chunks?: Chunk[]
+  }): Promise<void> | void
 }
 
 export class AiCodeFlowMetrics implements vscode.Disposable {
   private counters = empty()
   private timer: NodeJS.Timeout
+  private docs = new Map<string, string>()
 
   constructor(
     private readonly proxy = TelemetryProxy.getInstance(),
@@ -87,6 +98,10 @@ export class AiCodeFlowMetrics implements vscode.Disposable {
   }
 
   register(context: vscode.ExtensionContext) {
+    for (const editor of vscode.window.visibleTextEditors ?? []) {
+      const doc = editor.document
+      if (doc?.uri?.fsPath && typeof doc.getText === "function") this.docs.set(doc.uri.fsPath, doc.getText())
+    }
     context.subscriptions.push(
       vscode.workspace.onDidChangeTextDocument((event) => {
         void this.process(event)
@@ -100,20 +115,42 @@ export class AiCodeFlowMetrics implements vscode.Disposable {
     const changes = event.contentChanges.filter((change) => change.text)
     if (!changes.length) return
     const clipboard = await Promise.resolve(vscode.env.clipboard.readText()).catch(() => "")
+    const file = event.document.uri.fsPath
+    const before = file ? this.docs.get(file) : undefined
+    const after = typeof event.document.getText === "function" ? event.document.getText() : undefined
     for (const change of changes) {
       const now = Date.now()
       const result = analyze(change.text, clipboard, now, change.rangeLength)
       add(this.counters, result.counters)
-      if (result.source && result.counters.ai > 0 && event.document.uri.fsPath) {
+      if (result.source && result.counters.ai > 0 && file) {
         void this.ratio?.record({
-          file: event.document.uri.fsPath,
+          file,
           source: result.source,
           chars: result.counters.ai,
           lines: change.text.split(/\r?\n/).length,
           time: now,
+          beforeHash: before === undefined ? undefined : hash(before),
+          afterHash: after === undefined ? undefined : hash(after),
+          patchHash: hash(change.text),
+          chunks: this.lines(event.document, change) ?? chunks(change.text),
         })
       }
     }
+    if (file && after !== undefined) this.docs.set(file, after)
+  }
+
+  private lines(doc: vscode.TextDocument, change: vscode.TextDocumentContentChangeEvent) {
+    if (typeof doc.lineAt !== "function") return undefined
+    const count = Math.max(1, change.text.split(/\r?\n/).length)
+    const parts = change.text.split(/\r?\n/)
+    const found: Chunk[] = []
+    for (let i = 0; i < count; i++) {
+      const line = change.range.start.line + i
+      if (line >= doc.lineCount) break
+      const text = doc.lineAt(line).text
+      found.push({ hash: hash(text), chars: parts[i]?.length ?? text.length })
+    }
+    return found
   }
 
   flush() {

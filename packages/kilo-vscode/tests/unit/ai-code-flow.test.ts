@@ -14,6 +14,20 @@ function event(contentChanges: ReturnType<typeof change>[], scheme = "file") {
   }
 }
 
+function fileEvent(input: { file: string; before: string; after: string; text: string }) {
+  const lines = input.after.split(/\r?\n/)
+  return {
+    document: {
+      uri: { scheme: "file", fsPath: input.file },
+      getText: () => input.after,
+      lineCount: lines.length,
+      lineAt: (line: number) => ({ text: lines[line] ?? "" }),
+    },
+    contentChanges: [{ text: input.text, rangeLength: 0, range: { start: { line: 0 } } }],
+    before: input.before,
+  }
+}
+
 function create() {
   const captures: Array<{ event: string; properties?: Record<string, unknown> }> = []
   const metrics = new AiCodeFlowMetrics({
@@ -224,6 +238,41 @@ describe("ai code flow metrics", () => {
 
       expect(captures).toHaveLength(1)
       expect(captures[0]?.properties).toMatchObject({ manual_chars: 1, total_chars: 1 })
+    } finally {
+      metrics.dispose()
+    }
+  })
+
+  it("records lightweight before and after attribution for inline ai changes", async () => {
+    const records: unknown[] = []
+    const { metrics } = create()
+    const file = "/repo/src/a.ts"
+    try {
+      ;(metrics as unknown as { ratio: { record: (input: unknown) => void } }).ratio = {
+        record: (input) => records.push(input),
+      }
+      ;(metrics as unknown as { docs: Map<string, string> }).docs.set(file, "export {}\n")
+      AiCodeFlowMetrics.markAi("const ai = true")
+      await (metrics as unknown as { process: (input: unknown) => Promise<void> }).process(
+        fileEvent({
+          file,
+          before: "export {}\n",
+          after: "const ai = true\nexport {}\n",
+          text: "const ai = true",
+        }),
+      )
+
+      expect(records).toHaveLength(1)
+      expect(records[0]).toMatchObject({
+        file,
+        source: "inline",
+        chars: 15,
+        lines: 1,
+        chunks: [{ chars: 15 }],
+      })
+      expect(records[0]).toHaveProperty("beforeHash")
+      expect(records[0]).toHaveProperty("afterHash")
+      expect(records[0]).toHaveProperty("patchHash")
     } finally {
       metrics.dispose()
     }

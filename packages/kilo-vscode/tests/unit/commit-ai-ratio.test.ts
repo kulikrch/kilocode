@@ -6,6 +6,7 @@ import * as path from "path"
 import {
   CommitAiRatioCalculator,
   build,
+  chunks,
   hash,
   parseLog,
   patch,
@@ -131,6 +132,42 @@ describe("commit ai ratio calculator", () => {
       agent_percent: 30,
       ask_percent: 0,
       analyzer_version: 1,
+    })
+  })
+
+  it("matches hashed ai chunks against the final commit patch", () => {
+    const payload = build({
+      commit: commit({ hash: "abc" }),
+      patch: diff("kept generated"),
+      from: Date.parse("2026-07-09T11:00:00.000Z"),
+      records: [
+        {
+          repo: "/repo",
+          file: "src/a.ts",
+          source: "agent",
+          chars: 14,
+          lines: 1,
+          time: Date.parse("2026-07-09T11:30:00.000Z"),
+          chunks: chunks("kept generated"),
+        },
+        {
+          repo: "/repo",
+          file: "src/a.ts",
+          source: "agent",
+          chars: 17,
+          lines: 1,
+          time: Date.parse("2026-07-09T11:40:00.000Z"),
+          chunks: chunks("removed generated"),
+        },
+      ],
+    })
+
+    expect(payload).toMatchObject({
+      commit_hash: "abc",
+      commit_whole_lines: 1,
+      agent_lines: 1,
+      agent_percent: 100,
+      ai_percent: 100,
     })
   })
 

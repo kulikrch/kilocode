@@ -65,6 +65,17 @@ describe("KiloAiCodeFlow", () => {
     expect(KiloAiCodeFlow.chars({ patch: "" })).toBe(0)
   })
 
+  it("creates hashed chunks for generated lines without storing source text", () => {
+    const patch = ["--- a/example.ts", "+++ b/example.ts", "@@ -1 +1,2 @@", "+const generated = true", "+done()"].join(
+      "\n",
+    )
+
+    expect(KiloAiCodeFlow.chunks({ patch })).toEqual([
+      { hash: expect.any(String), chars: 22 },
+      { hash: expect.any(String), chars: 6 },
+    ])
+  })
+
   it("tracks sequential agent tool changes with session context", () => {
     const spy = spyOn(Telemetry, "trackAiCodeFlow").mockImplementation(() => {})
     try {
@@ -183,6 +194,10 @@ describe("KiloAiCodeFlow", () => {
         source: "agent",
         chars: 22,
         lines: 1,
+        beforeHash: expect.any(String),
+        afterHash: expect.any(String),
+        patchHash: expect.any(String),
+        chunks: [{ hash: expect.any(String), chars: 22 }],
       },
     ])
   })

@@ -4,6 +4,7 @@ import { promisify } from "util"
 import path from "path"
 import type { Snapshot } from "@/snapshot"
 import { Log } from "@/util"
+import { createHash } from "crypto"
 
 export namespace KiloAiCodeFlow {
   const added = /^\+(?!\+\+)(.*)$/
@@ -18,6 +19,10 @@ export namespace KiloAiCodeFlow {
     chars: number
     lines: number
     time: number
+    beforeHash: string
+    afterHash: string
+    patchHash: string
+    chunks: { hash: string; chars: number }[]
   }
 
   export function chars(diff: Pick<Snapshot.FileDiff, "patch">) {
@@ -31,6 +36,25 @@ export namespace KiloAiCodeFlow {
 
   export function total(diffs: readonly Pick<Snapshot.FileDiff, "patch">[]) {
     return diffs.reduce((sum, diff) => sum + chars(diff), 0)
+  }
+
+  function hash(text: string) {
+    return createHash("sha256").update(text).digest("hex")
+  }
+
+  function lines(diff: Pick<Snapshot.FileDiff, "patch">, prefix: "+" | "-") {
+    if (!diff.patch) return []
+    const header = prefix.repeat(3)
+    return diff.patch
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith(prefix) && !line.startsWith(header))
+      .map((line) => line.slice(1))
+  }
+
+  export function chunks(diff: Pick<Snapshot.FileDiff, "patch">) {
+    return lines(diff, "+")
+      .filter((line) => line.length > 0)
+      .map((line) => ({ hash: hash(line), chars: line.length }))
   }
 
   async function git(dir: string, args: string[]) {
@@ -63,6 +87,10 @@ export namespace KiloAiCodeFlow {
       chars: entry.chars,
       lines: entry.diff.additions,
       time,
+      beforeHash: hash(lines(entry.diff, "-").join("\n")),
+      afterHash: hash(lines(entry.diff, "+").join("\n")),
+      patchHash: hash(entry.diff.patch),
+      chunks: chunks(entry.diff),
     }))
     await Bun.write(target, JSON.stringify([...records, ...next].slice(-500)))
   }
