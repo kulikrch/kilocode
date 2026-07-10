@@ -23,6 +23,9 @@ type PromptType =
   | "TERMINAL_ADD_TO_CONTEXT"
   | "TERMINAL_FIX"
   | "TERMINAL_EXPLAIN"
+  | "TEST_RESULTS_ADD_TO_CONTEXT"
+  | "TEST_RESULTS_FIX"
+  | "TEST_RESULTS_EXPLAIN"
 
 const templates: Record<PromptType, string> = {
   EXPLAIN: `Explain the following code from file path \${filePath}:\${startLine}-\${endLine}
@@ -98,6 +101,34 @@ Please provide:
 1. What the command does
 2. Explanation of each part/flag
 3. Expected output and behavior`,
+
+  TEST_RESULTS_ADD_TO_CONTEXT: `\${userInput}
+Test results:
+\`\`\`
+\${testResultsContent}
+\`\`\``,
+
+  TEST_RESULTS_FIX: `\${userInput}
+Fix these test failures:
+\`\`\`
+\${testResultsContent}
+\`\`\`
+
+Please:
+1. Identify the failing tests and root cause
+2. Suggest the code or test changes needed
+3. Explain why the fix addresses the failure`,
+
+  TEST_RESULTS_EXPLAIN: `\${userInput}
+Explain these test results:
+\`\`\`
+\${testResultsContent}
+\`\`\`
+
+Please summarize:
+1. Which tests passed or failed
+2. The important failure messages
+3. The likely next debugging step`,
 }
 
 export function createPrompt(type: PromptType, params: Params): string {

@@ -157,6 +157,31 @@ describe("createPrompt", () => {
     })
   })
 
+  describe("TEST_RESULTS_ADD_TO_CONTEXT", () => {
+    it("includes test results content in code fence", () => {
+      const result = createPrompt("TEST_RESULTS_ADD_TO_CONTEXT", {
+        userInput: "",
+        testResultsContent: "1 failed, 2 passed",
+      })
+
+      expect(result).toContain("Test results:")
+      expect(result).toContain("```")
+      expect(result).toContain("1 failed, 2 passed")
+    })
+  })
+
+  describe("TEST_RESULTS_FIX", () => {
+    it("asks to fix test failures", () => {
+      const result = createPrompt("TEST_RESULTS_FIX", {
+        userInput: "",
+        testResultsContent: "AssertionError: expected 1 to equal 2",
+      })
+
+      expect(result).toContain("Fix these test failures")
+      expect(result).toContain("AssertionError")
+    })
+  })
+
   describe("missing params", () => {
     it("renders empty string for unknown template variable", () => {
       const result = createPrompt("ADD_TO_CONTEXT", {

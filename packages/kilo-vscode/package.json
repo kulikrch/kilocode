@@ -404,6 +404,21 @@
         "category": "Kilo Code"
       },
       {
+        "command": "kilo-code.new.testResultsAddToContext",
+        "title": "Add Test Results to Context",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.testResultsFixFailures",
+        "title": "Fix Test Failures",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.testResultsExplain",
+        "title": "Explain Test Results",
+        "category": "Kilo Code"
+      },
+      {
         "command": "kilo-code.new.focusChatInput",
         "title": "Focus Chat Input",
         "category": "Kilo Code"
@@ -446,6 +461,10 @@
       },
       {
         "id": "kilo-code.new.terminalContextMenu",
+        "label": "Kilo Code"
+      },
+      {
+        "id": "kilo-code.new.testResultsContextMenu",
         "label": "Kilo Code"
       }
     ],
@@ -515,6 +534,11 @@
           "command": "kilo-code.new.sidebarTitle.settingsButtonClicked",
           "group": "navigation@6",
           "when": "view == kilo-code.SidebarProvider"
+        },
+        {
+          "submenu": "kilo-code.new.testResultsContextMenu",
+          "group": "navigation@10",
+          "when": "view == workbench.panel.testResults.view && testing.hasAnyResults"
         }
       ],
       "scm/title": [
@@ -588,6 +612,24 @@
           "group": "2_kilocode"
         }
       ],
+      "testing/item/result": [
+        {
+          "submenu": "kilo-code.new.testResultsContextMenu",
+          "group": "2_kilocode"
+        }
+      ],
+      "testing/message/context": [
+        {
+          "submenu": "kilo-code.new.testResultsContextMenu",
+          "group": "2_kilocode"
+        }
+      ],
+      "testing/message/content": [
+        {
+          "submenu": "kilo-code.new.testResultsContextMenu",
+          "group": "2_kilocode"
+        }
+      ],
       "kilo-code.new.terminalContextMenu": [
         {
           "command": "kilo-code.new.terminalAddToContext",
@@ -599,6 +641,20 @@
         },
         {
           "command": "kilo-code.new.terminalExplainCommand",
+          "group": "1_actions@3"
+        }
+      ],
+      "kilo-code.new.testResultsContextMenu": [
+        {
+          "command": "kilo-code.new.testResultsAddToContext",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "kilo-code.new.testResultsFixFailures",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "kilo-code.new.testResultsExplain",
           "group": "1_actions@3"
         }
       ]
