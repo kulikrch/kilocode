@@ -322,6 +322,10 @@ export interface RequestClaudeCompatSettingMessage {
   type: "requestClaudeCompatSetting"
 }
 
+export interface RequestCommitMessageSettingsMessage {
+  type: "requestCommitMessageSettings"
+}
+
 export interface RequestConfigMessage {
   type: "requestConfig"
 }
@@ -332,7 +336,10 @@ export interface RequestGlobalConfigMessage {
 
 export interface UpdateConfigMessage {
   type: "updateConfig"
+  /** Global config patch written to ~/.config/kilo/kilo.json. */
   config: Partial<Config>
+  /** Project config patch written to the workspace's .kilo/kilo.jsonc or existing project config. */
+  projectConfig?: Partial<Config>
 }
 
 export interface RequestNotificationSettingsMessage {
@@ -936,6 +943,7 @@ export type WebviewMessage =
   | RequestTimelineSettingMessage
   | RequestBrowserSettingsMessage
   | RequestClaudeCompatSettingMessage
+  | RequestCommitMessageSettingsMessage
   | RequestConfigMessage
   | RequestGlobalConfigMessage
   | UpdateConfigMessage

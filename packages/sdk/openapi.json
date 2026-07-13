@@ -114,6 +114,22 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "CommitMessageNoChangesError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -8416,6 +8432,10 @@
                   },
                   "previousMessage": {
                     "description": "Previously generated message — triggers regeneration with a different result",
+                    "type": "string"
+                  },
+                  "language": {
+                    "description": "Target language for the generated commit message (e.g. zh, en). Falls back to English.",
                     "type": "string"
                   }
                 },

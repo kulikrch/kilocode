@@ -48,6 +48,9 @@ export namespace KilocodeConfig {
   /** Directory suffixes that Kilo recognizes in addition to .opencode. */
   export const KILO_DIR_SUFFIXES = [".kilo", ".kilocode"] as const
 
+  /** All config directory suffixes Kilo can update, including upstream .opencode. */
+  export const ALL_CONFIG_DIR_SUFFIXES = [".kilo", ".kilocode", ".opencode"] as const
+
   /** Path patterns for resolving kilo agent names from file paths. */
   export const AGENT_PATTERNS = ["/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
 
@@ -58,6 +61,34 @@ export namespace KilocodeConfig {
     "/.kilocode/command/",
     "/.kilocode/commands/",
   ] as const
+
+  export function projectConfigUpdateTarget(directory: string) {
+    for (const dir of ancestors(directory)) {
+      for (const suffix of ALL_CONFIG_DIR_SUFFIXES) {
+        const cfg = path.join(dir, suffix)
+        for (const file of ALL_CONFIG_FILES) {
+          const target = path.join(cfg, file)
+          if (existsSync(target)) return target
+        }
+      }
+      for (const file of ALL_CONFIG_FILES) {
+        const target = path.join(dir, file)
+        if (existsSync(target)) return target
+      }
+    }
+    return path.join(directory, ".kilo", "kilo.jsonc")
+  }
+
+  function ancestors(directory: string) {
+    const dirs: string[] = []
+    let current = path.resolve(directory)
+    while (true) {
+      dirs.push(current)
+      const parent = path.dirname(current)
+      if (parent === current) return dirs
+      current = parent
+    }
+  }
 
   // ── Warning helpers ──────────────────────────────────────────────────
 

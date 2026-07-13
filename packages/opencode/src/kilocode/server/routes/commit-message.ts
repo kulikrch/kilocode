@@ -2,7 +2,7 @@
 import { Hono } from "hono"
 import { describeRoute, resolver, validator } from "hono-openapi"
 import z from "zod"
-import { generateCommitMessage } from "../../commit-message"
+import { generateCommitMessage, NoChangesError } from "../../commit-message"
 import { Config } from "../../../config"
 import { lazy } from "../../../util/lazy"
 import { errors } from "../../../server/error"
@@ -23,6 +23,14 @@ export const CommitMessageRoutes = lazy(() =>
             },
           },
         },
+        422: {
+          description: "CommitMessageNoChangesError",
+          content: {
+            "application/json": {
+              schema: resolver(z.object({ message: z.string() })),
+            },
+          },
+        },
         ...errors(400),
       },
     }),
@@ -35,14 +43,27 @@ export const CommitMessageRoutes = lazy(() =>
           .string()
           .optional()
           .meta({ description: "Previously generated message — triggers regeneration with a different result" }),
+        language: z
+          .string()
+          .optional()
+          .meta({
+            description: "Target language for the generated commit message (e.g. zh, en). Falls back to English.",
+          }),
       }),
     ),
     async (c) => {
       const body = c.req.valid("json")
       const config = await Config.get()
       const prompt = config.commit_message?.prompt || undefined
-      const result = await generateCommitMessage({ ...body, prompt })
-      return c.json({ message: result.message })
+      try {
+        const result = await generateCommitMessage({ ...body, prompt })
+        return c.json({ message: result.message })
+      } catch (err) {
+        if (err instanceof NoChangesError) {
+          return c.json({ message: err.message }, 422)
+        }
+        throw err
+      }
     },
   ),
 )

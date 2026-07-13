@@ -803,7 +803,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           this.fetchAndSendGlobalConfig().catch((e) => console.error("[Kilo New] fetchAndSendGlobalConfig failed:", e))
           break
         case "updateConfig":
-          await this.handleUpdateConfig(message.config)
+          await this.handleUpdateConfig(message.config, message.projectConfig)
           break
         case "setLanguage":
           await vscode.workspace
@@ -865,6 +865,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "requestClaudeCompatSetting":
           this.sendClaudeCompatSetting()
+          break
+        case "requestCommitMessageSettings":
+          this.sendCommitMessageSettings()
           break
         case "requestNotificationSettings":
           this.sendNotificationSettings()
@@ -2242,7 +2245,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Applies a partial config update via the global config endpoint, then pushes
    * the full merged config back to the webview.
    */
-  private async handleUpdateConfig(partial: Partial<Config>): Promise<void> {
+  private async handleUpdateConfig(partial: Partial<Config>, project: Partial<Config> = {}): Promise<void> {
     if (!this.client || this.connectionState !== "connected") {
       this.postMessage({ type: "configUpdateFailed", message: "Not connected to CLI backend" })
       return
@@ -2252,21 +2255,20 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       partial.provider !== undefined ||
       partial.disabled_providers !== undefined ||
       partial.enabled_providers !== undefined
+    const hasGlobal = Object.keys(partial).length > 0
+    const hasProject = Object.keys(project).length > 0
 
     // Guard against fetchAndSendConfig pushing stale data while the write is in flight.
     this.pending++
+    const dir = this.getWorkspaceDirectory()
 
     // Phase 1: write. Errors here = real save failures the user can fix + retry.
     try {
       await this.connectionService.drainPendingPrompts()
-      await this.client.global.config.update({ config: partial }, { throwOnError: true })
+      if (hasGlobal) await this.client.global.config.update({ config: partial }, { throwOnError: true })
+      if (hasProject) await this.client.config.update({ config: project, directory: dir }, { throwOnError: true })
     } catch (error) {
-      console.error("[Kilo New] KiloProvider: Failed to update config:", error)
-      this.postMessage({
-        type: "configUpdateFailed",
-        message: getErrorMessage(error) || "Failed to update config",
-        details: getConfigErrorDetails(error),
-      })
+      this.postConfigFailure(error)
       this.pending--
       return
     }
@@ -2275,20 +2277,29 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // transient, so send an optimistic configUpdated to clear the webview's
     // saving/draft state. SSE global.config.updated pushes the real data next.
     try {
-      const dir = this.getWorkspaceDirectory()
       const { data: merged } = await retry(() => this.client!.config.get({ directory: dir }, { throwOnError: true }))
       this.cachedConfigMessage = { type: "configLoaded", config: merged }
       this.postMessage({ type: "configUpdated", config: merged })
       if (refreshProviders) await this.fetchAndSendProviders()
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Config write succeeded but post-write refresh failed:", error)
+      const patch = { ...partial, ...project }
       const cached = (this.cachedConfigMessage as { config?: unknown } | null)?.config
       const optimistic =
-        cached && typeof cached === "object" ? { ...(cached as Record<string, unknown>), ...partial } : partial
+        cached && typeof cached === "object" ? { ...(cached as Record<string, unknown>), ...patch } : patch
       this.postMessage({ type: "configUpdated", config: optimistic })
     } finally {
       this.pending--
     }
+  }
+
+  private postConfigFailure(error: unknown): void {
+    console.error("[Kilo New] KiloProvider: Failed to update config:", error)
+    this.postMessage({
+      type: "configUpdateFailed",
+      message: getErrorMessage(error) || "Failed to update config",
+      details: getConfigErrorDetails(error),
+    })
   }
 
   /**
@@ -2864,6 +2875,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       type: "claudeCompatSettingLoaded",
       enabled: enabled ?? false,
     })
+  }
+
+  private sendCommitMessageSettings(): void {
+    const language = vscode.workspace.getConfiguration("kilo-code.new").get<string>("languageCommitMessage", "sync")
+    this.postMessage({ type: "commitMessageSettingsLoaded", language })
   }
 
   /** Re-fetch all server-side state after an auth change. */

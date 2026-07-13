@@ -13,6 +13,7 @@ import type { ParentComponent, Accessor } from "solid-js"
 import { useVSCode } from "./vscode"
 import type { Config, ExtensionMessage } from "../types/messages"
 import { deepMerge, stripNulls, resolveConfig } from "../utils/config-utils"
+import { splitConfigByScope } from "../utils/config-scope"
 
 export interface SaveError {
   message: string
@@ -132,7 +133,8 @@ export const ConfigProvider: ParentComponent = (props) => {
     // If the write fails, the save bar stays visible so the user can retry.
     setSaving(true)
     setSaveError(null)
-    vscode.postMessage({ type: "updateConfig", config: changes })
+    const split = splitConfigByScope(changes)
+    vscode.postMessage({ type: "updateConfig", config: split.global, projectConfig: split.project })
   }
 
   function discardConfig() {

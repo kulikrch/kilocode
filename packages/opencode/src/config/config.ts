@@ -895,14 +895,26 @@ export const layer = Layer.effect(
 
     const update = Effect.fn("Config.update")(function* (config: Info) {
       const dir = yield* InstanceState.directory
-      const file = path.join(dir, "config.json")
-      const existing = yield* loadFile(file)
-      yield* fs
-        .writeFileString(
-          file,
-          JSON.stringify(KilocodeConfig.mergeConfig(writable(existing), writable(config)), null, 2),
-        )
-        .pipe(Effect.orDie) // kilocode_change
+      // kilocode_change start - write project-scoped updates to the Kilo project config that is actually loaded
+      yield* Effect.promise(async () => {
+        const file = KilocodeConfig.projectConfigUpdateTarget(dir)
+        const source = existsSync(file) ? await fsNode.readFile(file, "utf8") : undefined
+        const before = source ?? "{}"
+        const patch = writable(config)
+        if (file.endsWith(".jsonc")) {
+          if (source === undefined && Object.keys(KilocodeConfig.mergeConfig({}, patch)).length === 0) return
+          const updated = patchJsonc(before, patch)
+          await fsNode.mkdir(path.dirname(file), { recursive: true })
+          await fsNode.writeFile(file, updated)
+          return
+        }
+        const existing = ConfigParse.schema(Info, ConfigParse.jsonc(before, file), file)
+        const merged = KilocodeConfig.mergeConfig(writable(existing), patch)
+        if (source === undefined && Object.keys(merged).length === 0) return
+        await fsNode.mkdir(path.dirname(file), { recursive: true })
+        await fsNode.writeFile(file, JSON.stringify(merged, null, 2))
+      })
+      // kilocode_change end
       yield* Effect.promise(() => Instance.dispose())
     })
 

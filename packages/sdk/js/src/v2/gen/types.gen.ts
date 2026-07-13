@@ -6261,6 +6261,10 @@ export type CommitMessageGenerateData = {
      * Previously generated message — triggers regeneration with a different result
      */
     previousMessage?: string
+    /**
+     * Target language for the generated commit message (e.g. zh, en). Falls back to English.
+     */
+    language?: string
   }
   path?: never
   query?: {
@@ -6275,6 +6279,12 @@ export type CommitMessageGenerateErrors = {
    * Bad request
    */
   400: BadRequestError
+  /**
+   * CommitMessageNoChangesError
+   */
+  422: {
+    message: string
+  }
 }
 
 export type CommitMessageGenerateError = CommitMessageGenerateErrors[keyof CommitMessageGenerateErrors]

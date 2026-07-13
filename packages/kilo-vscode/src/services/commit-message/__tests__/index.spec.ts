@@ -18,6 +18,15 @@ vi.mock("vscode", () => {
           uri: { fsPath: "/test/workspace" },
         },
       ],
+      getConfiguration: vi.fn(() => ({
+        get: vi.fn((key: string, fallback?: unknown) => {
+          if (key === "languageCommitMessage") return "sync"
+          return fallback
+        }),
+      })),
+    },
+    env: {
+      language: "en",
     },
     extensions: {
       getExtension: vi.fn(),
@@ -177,7 +186,7 @@ describe("commit-message service", () => {
       await commandCallback()
 
       expect(mockClient.commitMessage.generate).toHaveBeenCalledWith(
-        { path: "/repo", selectedFiles: undefined, previousMessage: undefined },
+        { path: "/repo", selectedFiles: undefined, previousMessage: undefined, language: "en" },
         expect.objectContaining({ throwOnError: true }),
       )
     })
@@ -225,7 +234,7 @@ describe("commit-message service", () => {
 
       expect(vscode.window.withProgress).toHaveBeenCalledWith(
         expect.objectContaining({
-          location: vscode.ProgressLocation.SourceControl,
+          location: 1,
           title: "Generating commit message...",
           cancellable: true,
         }),
@@ -236,7 +245,7 @@ describe("commit-message service", () => {
     it("uses the matching repository when SourceControl arg is provided", async () => {
       const mainInputBox = { value: "" }
       const worktreeInputBox = { value: "" }
-      vi.mocked(vscode.extensions.getExtension).mockReturnValue({
+      ;(vscode.extensions.getExtension as Mock).mockReturnValue({
         isActive: true,
         activate: vi.fn().mockResolvedValue(undefined),
         exports: {
@@ -248,8 +257,7 @@ describe("commit-message service", () => {
           }),
         },
       } as any)
-
-      vi.mocked(vscode.window.withProgress).mockImplementation(async (_options, task) => {
+      ;(vscode.window.withProgress as Mock).mockImplementation(async (_options, task) => {
         await task({} as any, { onCancellationRequested: vi.fn() } as any)
       })
 
@@ -264,7 +272,7 @@ describe("commit-message service", () => {
 
     it("falls back to first repository when SourceControl arg has no match", async () => {
       const mainInputBox = { value: "" }
-      vi.mocked(vscode.extensions.getExtension).mockReturnValue({
+      ;(vscode.extensions.getExtension as Mock).mockReturnValue({
         isActive: true,
         activate: vi.fn().mockResolvedValue(undefined),
         exports: {
@@ -273,8 +281,7 @@ describe("commit-message service", () => {
           }),
         },
       } as any)
-
-      vi.mocked(vscode.window.withProgress).mockImplementation(async (_options, task) => {
+      ;(vscode.window.withProgress as Mock).mockImplementation(async (_options, task) => {
         await task({} as any, { onCancellationRequested: vi.fn() } as any)
       })
 

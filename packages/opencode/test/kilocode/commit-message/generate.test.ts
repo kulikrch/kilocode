@@ -13,6 +13,7 @@ const realAgent = await import("@/agent/agent")
 const realGitContext = await import("@/kilocode/commit-message/git-context")
 
 let mockStreamText = "feat(src): add hello world logging"
+let capturedPrompt = ""
 
 const defaultGitContext: GitContext = {
   branch: "main",
@@ -54,12 +55,15 @@ mock.module("@/session/llm", () => ({
   ...realLLM,
   LLM: {
     ...realLLM.LLM,
-    stream: async () => ({
-      textStream: (async function* () {
-        yield mockStreamText
-      })(),
-      text: Promise.resolve(mockStreamText),
-    }),
+    stream: async (input: { agent: { prompt: string } }) => {
+      capturedPrompt = input.agent.prompt
+      return {
+        textStream: (async function* () {
+          yield mockStreamText
+        })(),
+        text: Promise.resolve(mockStreamText),
+      }
+    },
   },
 }))
 
@@ -81,11 +85,12 @@ mock.module("@/util", () => ({
   },
 }))
 
-import { generateCommitMessage } from "../../../src/kilocode/commit-message/generate"
+import { NoChangesError, generateCommitMessage } from "../../../src/kilocode/commit-message/generate"
 
 describe("commit-message.generate", () => {
   beforeEach(() => {
     mockStreamText = "feat(src): add hello world logging"
+    capturedPrompt = ""
     mockGitContext = { ...defaultGitContext }
     captured = { path: "" }
   })
@@ -159,9 +164,7 @@ describe("commit-message.generate", () => {
   describe("error on no changes", () => {
     test("throws when no git changes are found", async () => {
       mockGitContext = { branch: "main", recentCommits: [], files: [] }
-      await expect(generateCommitMessage({ path: "/repo" })).rejects.toThrow(
-        "No changes found to generate a commit message for",
-      )
+      await expect(generateCommitMessage({ path: "/repo" })).rejects.toBeInstanceOf(NoChangesError)
     })
   })
 
@@ -186,6 +189,17 @@ describe("commit-message.generate", () => {
     test("uses custom prompt when provided", async () => {
       const result = await generateCommitMessage({ path: "/repo", prompt: "Write a haiku commit message." })
       expect(result.message).toBeTruthy()
+    })
+
+    test("adds language instruction for non-English messages", async () => {
+      await generateCommitMessage({ path: "/repo", language: "zh" })
+      expect(capturedPrompt).toContain("Language Requirement")
+      expect(capturedPrompt).toContain("zh")
+    })
+
+    test("does not add language instruction for English messages", async () => {
+      await generateCommitMessage({ path: "/repo", language: "en" })
+      expect(capturedPrompt).not.toContain("Language Requirement")
     })
   })
 })

@@ -391,6 +391,11 @@ export interface ClaudeCompatSettingLoadedMessage {
   enabled: boolean
 }
 
+export interface CommitMessageSettingsLoadedMessage {
+  type: "commitMessageSettingsLoaded"
+  language: string
+}
+
 export interface ConfigLoadedMessage {
   type: "configLoaded"
   config: Config
@@ -846,6 +851,7 @@ export type ExtensionMessage =
   | SuggestionErrorMessage
   | BrowserSettingsLoadedMessage
   | ClaudeCompatSettingLoadedMessage
+  | CommitMessageSettingsLoadedMessage
   | ConfigLoadedMessage
   | ConfigUpdatedMessage
   | ConfigUpdateFailedMessage
