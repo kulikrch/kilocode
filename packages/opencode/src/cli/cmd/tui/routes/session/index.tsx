@@ -894,6 +894,11 @@ export function Session() {
       value: "messages.copy",
       keybind: "messages_copy",
       category: "Session",
+      // kilocode_change start - /copy copies the latest assistant response
+      slash: {
+        name: "copy",
+      },
+      // kilocode_change end
       onSelect: (dialog) => {
         const revertID = session()?.revert?.messageID
         const lastAssistantMessage = messages().findLast(
@@ -937,16 +942,22 @@ export function Session() {
       value: "session.copy",
       category: "Session",
       slash: {
-        name: "copy",
+        name: "copy-session", // kilocode_change - transcript copy moved off /copy
       },
       onSelect: async (dialog) => {
         try {
           const sessionData = session()
           if (!sessionData) return
-          const sessionMessages = messages()
+          // kilocode_change start - fetch all messages from server instead of truncated sync store
+          const allMessages = await sdk.client.session.messages({ sessionID: sessionData.id }, { throwOnError: true })
+          const sessionMessages = allMessages.data.map((msg) => ({
+            info: msg.info,
+            parts: msg.parts,
+          }))
+          // kilocode_change end
           const transcript = formatTranscript(
             sessionData,
-            sessionMessages.map((msg) => ({ info: msg, parts: sync.data.part[msg.id] ?? [] })),
+            sessionMessages, // kilocode_change
             {
               thinking: showThinking(),
               toolDetails: showDetails(),
@@ -974,7 +985,6 @@ export function Session() {
         try {
           const sessionData = session()
           if (!sessionData) return
-          const sessionMessages = messages()
 
           const defaultFilename = `session-${sessionData.id.slice(0, 8)}.md`
 
@@ -989,9 +999,17 @@ export function Session() {
 
           if (options === null) return
 
+          // kilocode_change start - fetch all messages from server instead of truncated sync store
+          const allMessages = await sdk.client.session.messages({ sessionID: sessionData.id }, { throwOnError: true })
+          const sessionMessages = allMessages.data.map((msg) => ({
+            info: msg.info,
+            parts: msg.parts,
+          }))
+          // kilocode_change end
+
           const transcript = formatTranscript(
             sessionData,
-            sessionMessages.map((msg) => ({ info: msg, parts: sync.data.part[msg.id] ?? [] })),
+            sessionMessages, // kilocode_change
             {
               thinking: options.thinking,
               toolDetails: options.toolDetails,

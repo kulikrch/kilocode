@@ -282,6 +282,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   window.addEventListener("compactSession", onCompact)
   onCleanup(() => window.removeEventListener("compactSession", onCompact))
 
+  const onExport = () => {
+    const id = session.currentSessionID()
+    if (id) session.exportSessionTranscript(id)
+  }
+  window.addEventListener("exportSessionTranscript", onExport)
+  onCleanup(() => window.removeEventListener("exportSessionTranscript", onExport))
+
   const isBusy = () => isPromptBusy(session.status(), !!props.suggesting?.(), !!props.questioning?.())
   const isDisabled = () => !server.isConnected()
   const hasInput = () => text().trim().length > 0 || imageAttach.images().length > 0 || reviewComments().length > 0
