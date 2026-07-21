@@ -4,7 +4,6 @@ import type { AgentConfig, PermissionConfig } from "../../types/messages"
 export const MAX_IMPORT_SIZE = 1_048_576
 
 const NAME_RE = /^[a-z][a-z0-9-]*$/
-const MODES = ["subagent", "primary", "all"] as const
 const LEVELS = new Set(["allow", "ask", "deny"])
 
 export type ImportError = "invalidJson" | "invalidName" | "nameTaken" | "tooLarge"
@@ -72,8 +71,6 @@ export function parseImport(json: string, taken: string[]): ImportResult {
   if (typeof obj.description === "string") partial.description = obj.description
   if (typeof obj.prompt === "string") partial.prompt = obj.prompt
   if (typeof obj.model === "string") partial.model = obj.model
-  if (typeof obj.mode === "string" && (MODES as readonly string[]).includes(obj.mode))
-    partial.mode = obj.mode as AgentConfig["mode"]
   if (typeof obj.temperature === "number") partial.temperature = obj.temperature
   if (typeof obj.top_p === "number") partial.top_p = obj.top_p
   if (typeof obj.steps === "number") partial.steps = obj.steps
@@ -83,7 +80,7 @@ export function parseImport(json: string, taken: string[]): ImportResult {
   return {
     ok: true,
     name,
-    config: { ...partial, mode: partial.mode ?? "primary" },
+    config: { ...partial, mode: "subagent" },
   }
 }
 
@@ -91,5 +88,5 @@ export function parseImport(json: string, taken: string[]): ImportResult {
  * Build the JSON-serialisable export payload for a mode.
  */
 export function buildExport(name: string, cfg: AgentConfig): Record<string, unknown> {
-  return { name, ...cfg }
+  return { name, ...cfg, mode: "subagent" }
 }

@@ -2,7 +2,7 @@ export * as ConfigAgent from "./agent"
 
 import { Schema } from "effect"
 import z from "zod"
-import path from "path"
+import path from "path" // kilocode_change
 import { Bus } from "@/bus"
 import { zod, ZodOverride } from "@/util/effect-zod"
 import { Log } from "../util"
@@ -12,7 +12,7 @@ import { configEntryNameFromPath } from "./entry-name"
 import * as ConfigMarkdown from "./markdown"
 import { ConfigModelID } from "./model-id"
 import { ConfigPermission } from "./permission"
-import { ConfigVariable } from "./variable"
+import { ConfigVariable } from "./variable" // kilocode_change
 // kilocode_change start
 import { KilocodeConfig } from "@/kilocode/config/config"
 import { Requirements as AgentRequirements } from "@/kilocode/agent-requirements"
@@ -50,7 +50,10 @@ const AgentSchema = Schema.StructWithRest(
     }),
     disable: Schema.optional(Schema.Boolean),
     description: Schema.optional(Schema.String).annotate({ description: "Description of when to use the agent" }),
-    mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])),
+    mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])).annotate({
+      description:
+        "Agent mode. Config-defined agents are loaded as subagents; primary/all are accepted for compatibility but cannot create selectable main agents.",
+    }),
     displayName: Schema.optional(Schema.String).annotate({
       description: "Human-readable name shown in the UI (e.g. for organization or marketplace agents)",
     }),
@@ -194,7 +197,7 @@ export async function load(dir: string, warnings?: Warning[]) {
     const config = {
       name,
       ...md.data,
-      prompt,
+      prompt, // kilocode_change
     }
     const parsed = Info.safeParse(config)
     if (parsed.success) {
@@ -245,7 +248,7 @@ export async function loadMode(dir: string, warnings?: Warning[]) {
     if (parsed.success) {
       result[config.name] = {
         ...parsed.data,
-        mode: "primary" as const,
+        mode: "subagent" as const, // kilocode_change
       }
       continue
     }

@@ -83,7 +83,7 @@ export namespace ModesMigrator {
     const prompt = [mode.roleDefinition, mode.customInstructions].filter(Boolean).join("\n\n")
 
     return {
-      mode: "primary",
+      mode: "subagent",
       description: mode.description ?? mode.whenToUse ?? mode.name,
       prompt,
       permission: convertPermissions(mode.groups),
@@ -106,7 +106,7 @@ export namespace ModesMigrator {
     }
 
     return {
-      mode: "primary",
+      mode: "subagent",
       description: cfg.description ?? cfg.whenToUse ?? mode.name,
       prompt: prompt || undefined,
       permission: convertPermissions(groups),

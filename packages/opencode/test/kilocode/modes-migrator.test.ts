@@ -111,7 +111,7 @@ describe("ModesMigrator", () => {
 
       const agent = ModesMigrator.convertMode(mode)
 
-      expect(agent.mode).toBe("primary")
+      expect(agent.mode).toBe("subagent")
       expect(agent.prompt).toBe("You are a translator...\n\nTranslate accurately.")
       expect(agent.permission?.read).toBe("allow")
       expect(agent.permission?.edit).toEqual({

@@ -375,6 +375,7 @@ describe("tool.task", () => {
             ]),
           )
           // kilocode_change end
+          // kilocode_change start - subagents cannot ask questions or delegate again
           expect(seen?.tools).toEqual({
             question: false,
             todowrite: false,
@@ -382,6 +383,7 @@ describe("tool.task", () => {
             bash: false,
             read: false,
           })
+          // kilocode_change end
         }),
       {
         config: {
@@ -399,9 +401,10 @@ describe("tool.task", () => {
           },
         },
       },
-    ),
-  )
+    ), // kilocode_change
+  ) // kilocode_change
 
+  // kilocode_change start - task subagent cost propagation
   it.live("execute propagates child assistant cost to the parent task message", () =>
     provideTmpdirInstance(() =>
       Effect.gen(function* () {
@@ -448,4 +451,5 @@ describe("tool.task", () => {
       }),
     ),
   )
+  // kilocode_change end
 })

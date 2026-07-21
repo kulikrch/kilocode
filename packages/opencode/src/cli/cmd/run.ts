@@ -321,6 +321,7 @@ export const RunCommand = cmd({
     const directory = (() => {
       if (!args.dir) return undefined
       if (args.attach) return args.dir
+      // kilocode_change start - clear local headless root marker when run exits
       try {
         process.chdir(args.dir)
         return process.cwd()
@@ -487,7 +488,7 @@ export const RunCommand = cmd({
           }
 
           if (event.type === "message.part.updated") {
-            const part = event.properties.part
+            const part = event.properties.part // kilocode_change
             // kilocode_change start - track Task child sessions so permission replies can target them
             KiloRunAuto.track(auto, part)
             // kilocode_change end
@@ -584,7 +585,7 @@ export const RunCommand = cmd({
           }
 
           if (event.type === "permission.asked") {
-            const permission = event.properties
+            const permission = event.properties // kilocode_change
             // kilocode_change start - auto/attach must handle tracked Task child permissions too
             if (args.auto) {
               if (!KiloRunAuto.allowed(auto, permission.sessionID)) continue
@@ -725,7 +726,7 @@ export const RunCommand = cmd({
       if (!sessionID) {
         UI.error("Session not found")
         process.exit(1)
-      }
+      } // kilocode_change
       // kilocode_change start - track Task children; plain local headless runs deny subagent asks instead of hanging
       const auto = KiloRunAuto.create(sessionID)
       const headless = !args.attach && !args.auto && !args["dangerously-skip-permissions"]
@@ -738,6 +739,7 @@ export const RunCommand = cmd({
         process.exit(1)
       })
 
+      // kilocode_change start - clear local headless root marker after the root prompt exits
       try {
         if (args.command) {
           await sdk.session.command({
@@ -761,6 +763,7 @@ export const RunCommand = cmd({
       } finally {
         if (headless) KiloHeadless.clear(sessionID)
       }
+      // kilocode_change end
     }
 
     if (args.attach) {
