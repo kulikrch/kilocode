@@ -161,14 +161,26 @@ export function preprocessConfig<T>(agentConfig: Record<string, T>): Record<stri
   return result
 }
 
-// Set displayName and deprecated from options after config item is processed.
+// Lift Kilo-internal metadata onto typed agent fields and remove it from `options`.
+// Older org modes and marketplace agents stored `displayName`/`source` inside the
+// `options` record, which is otherwise forwarded verbatim to the provider as request
+// parameters. Promoting then deleting them keeps `options` provider-clean at the source
+// (the request boundary still strips as a safety net).
 export function processConfigItem(item: {
   options: Record<string, unknown>
   displayName?: string
+  source?: string
   deprecated?: boolean
 }) {
-  if (item.options?.displayName && typeof item.options.displayName === "string") {
+  if (!item.displayName && typeof item.options?.displayName === "string") {
     item.displayName = item.options.displayName
+  }
+  if (!item.source && typeof item.options?.source === "string") {
+    item.source = item.options.source
+  }
+  if (item.options) {
+    delete item.options.displayName
+    delete item.options.source
   }
 }
 
@@ -196,6 +208,7 @@ export function patchAgents(
     {
       name: string
       displayName?: string
+      source?: string
       description?: string
       deprecated?: boolean
       mode: "subagent" | "primary" | "all"
@@ -397,7 +410,7 @@ export async function remove(name: string) {
   if (!agent) throw new RemoveError({ name, message: "agent not found" })
   if (agent.native) throw new RemoveError({ name, message: "cannot remove native agent" })
   // Prevent removal of organization-managed agents
-  if (agent.options?.source === "organization")
+  if (agent.source === "organization" || agent.options?.source === "organization")
     throw new RemoveError({ name, message: "cannot remove organization agent — manage it from the cloud dashboard" })
 
   const { unlink, writeFile } = await import("fs/promises")

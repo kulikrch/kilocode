@@ -24,11 +24,14 @@ import { Skill } from "../skill"
 import { Effect, Context, Layer } from "effect"
 import { InstanceState } from "@/effect"
 import * as KiloAgent from "@/kilocode/agent" // kilocode_change
+import * as AgentRequirements from "@/kilocode/agent-requirements" // kilocode_change
+import { MCP } from "@/mcp" // kilocode_change
 
 export const Info = z
   .object({
     name: z.string(),
     displayName: z.string().optional(), // kilocode_change - human-readable name for org modes
+    source: z.string().optional(), // kilocode_change - origin marker (organization | global | project)
     description: z.string().optional(),
     deprecated: z.boolean().optional(), // kilocode_change
     mode: z.enum(["subagent", "primary", "all"]),
@@ -47,6 +50,7 @@ export const Info = z
     variant: z.string().optional(),
     prompt: z.string().optional(),
     options: z.record(z.string(), z.any()),
+    requirements: AgentRequirements.Requirements.optional(), // kilocode_change
     steps: z.number().int().positive().optional(),
   })
   .meta({
@@ -58,6 +62,8 @@ export interface Interface {
   readonly get: (agent: string) => Effect.Effect<Info>
   readonly list: () => Effect.Effect<Info[]>
   readonly defaultAgent: () => Effect.Effect<string>
+  readonly requirementStatus: (agent: string) => Effect.Effect<AgentRequirements.Result> // kilocode_change
+  readonly guardRequirements: (agent: Info) => Effect.Effect<void, InstanceType<typeof AgentRequirements.BlockedError>> // kilocode_change
   readonly generate: (input: {
     description: string
     model?: { providerID: ProviderID; modelID: ModelID }
@@ -68,7 +74,7 @@ export interface Interface {
   }>
 }
 
-type State = Omit<Interface, "generate">
+type State = Omit<Interface, "generate" | "requirementStatus" | "guardRequirements">
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/Agent") {}
 
@@ -79,6 +85,7 @@ export const layer = Layer.effect(
     const auth = yield* Auth.Service
     const plugin = yield* Plugin.Service
     const skill = yield* Skill.Service
+    const mcp = yield* MCP.Service // kilocode_change
     const provider = yield* Provider.Service
 
     const state = yield* InstanceState.make<State>(
@@ -283,6 +290,11 @@ export const layer = Layer.effect(
           item.hidden = value.hidden ?? item.hidden
           item.name = value.name ?? item.name
           item.steps = value.steps ?? item.steps
+          item.requirements = value.requirements ?? item.requirements // kilocode_change
+          // kilocode_change start - carry metadata as typed fields, never as provider options
+          item.displayName = value.displayName ?? item.displayName
+          item.source = value.source ?? item.source
+          // kilocode_change end
           item.options = mergeDeep(item.options, value.options ?? {})
           item.permission = Permission.merge(item.permission, Permission.fromConfig(value.permission ?? {}))
           KiloAgent.processConfigItem(item) // kilocode_change - populate displayName from options
@@ -347,6 +359,32 @@ export const layer = Layer.effect(
       }),
     )
 
+    // kilocode_change start - agent requirement status and guard hooks
+    const requirementStatus = Effect.fn("Agent.requirementStatus")(function* (name: string) {
+      const ctx = yield* InstanceState.context
+      return yield* AgentRequirements.status({
+        name,
+        directory: ctx.directory,
+        config,
+        skills: skill,
+        mcp,
+        agents: { get: (agent) => InstanceState.useEffect(state, (s) => s.get(agent)) },
+      })
+    })
+
+    const guardRequirements = Effect.fn("Agent.guardRequirements")(function* (agent: Info) {
+      const ctx = yield* InstanceState.context
+      yield* AgentRequirements.guard({
+        agent,
+        directory: ctx.directory,
+        config,
+        skills: skill,
+        mcp,
+        agents: { get: (name) => InstanceState.useEffect(state, (s) => s.get(name)) },
+      })
+    })
+    // kilocode_change end
+
     return Service.of({
       get: Effect.fn("Agent.get")(function* (agent: string) {
         return yield* InstanceState.useEffect(state, (s) => s.get(agent))
@@ -357,6 +395,8 @@ export const layer = Layer.effect(
       defaultAgent: Effect.fn("Agent.defaultAgent")(function* () {
         return yield* InstanceState.useEffect(state, (s) => s.defaultAgent())
       }),
+      requirementStatus, // kilocode_change
+      guardRequirements, // kilocode_change
       generate: Effect.fn("Agent.generate")(function* (input: {
         description: string
         model?: { providerID: ProviderID; modelID: ModelID }
@@ -430,6 +470,7 @@ export const defaultLayer = layer.pipe(
   Layer.provide(Auth.defaultLayer),
   Layer.provide(Config.defaultLayer),
   Layer.provide(Skill.defaultLayer),
+  Layer.provide(MCP.defaultLayer), // kilocode_change
 )
 
 // kilocode_change start - agent removal (delegated to kilocode module)

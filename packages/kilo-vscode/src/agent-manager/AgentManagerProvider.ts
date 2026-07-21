@@ -29,6 +29,7 @@ import { continueInWorktree } from "./continue-in-worktree"
 import { WorktreeDiffController } from "./worktree-diff-controller"
 import { WorktreeImporter } from "./worktree-importer"
 import { diffSummary as localDiffSummary, diffFile as localDiffFile } from "./local-diff"
+import { parseToolRequest, startFromTool, type ToolRequest } from "./tool-start"
 
 import { buildKeybindingMap } from "./format-keybinding"
 import { resolveVersionModels, buildInitialMessages, type CreatedVersion } from "./multi-version"
@@ -63,8 +64,10 @@ export class AgentManagerProvider implements Disposable {
   private gitOps: GitOps
   private diffs: WorktreeDiffController
   private staleWorktreeIds = new Set<string>()
+  private toolRequests = new Set<string>()
   private cachedWorktreeStats: { type: "agentManager.worktreeStats"; stats: WorktreeStats[] } | undefined
   private cachedLocalStats: { type: "agentManager.localStats"; stats: LocalStats } | undefined
+  private unsubTool: (() => void) | undefined
 
   /** Session ID most recently loaded via a `loadMessages` message from the webview.
    *  Updated synchronously — unlike the session provider's currentSession which depends on
@@ -152,6 +155,10 @@ export class AgentManagerProvider implements Disposable {
       log: (...a) => this.log(...a),
       semaphore,
     })
+    this.unsubTool = this.connectionService.onEventFiltered(
+      (event) => (event as { type?: string }).type === "kilocode.agent_manager.start",
+      (event) => this.onToolEvent(event),
+    )
   }
 
   private log(...args: unknown[]) {
@@ -159,11 +166,11 @@ export class AgentManagerProvider implements Disposable {
     this.outputChannel.appendLine(`${new Date().toISOString()} ${msg}`)
   }
 
-  public openPanel(): void {
+  public openPanel(preserveFocus?: boolean): void {
     if (this.panel) {
       this.log("Panel already open, revealing")
-      this.panel.reveal()
-      this.postToWebview({ type: "action", action: "focusInput" })
+      this.panel.reveal(preserveFocus)
+      if (!preserveFocus) this.postToWebview({ type: "action", action: "focusInput" })
       return
     }
     this.log("Opening Agent Manager panel")
@@ -1000,6 +1007,49 @@ export class AgentManagerProvider implements Disposable {
     )
   }
 
+  private onToolEvent(event: unknown): void {
+    const properties = (event as { properties?: unknown }).properties
+    const req = parseToolRequest(properties)
+    if (!req) return
+    void this.startToolRequest(req)
+  }
+
+  private async startToolRequest(req: ToolRequest): Promise<void> {
+    await startFromTool(
+      {
+        getClient: () => this.connectionService.getClient(),
+        getRoot: () => this.getRoot(),
+        getState: () => this.getStateManager(),
+        getPanel: () => this.panel,
+        openPanel: (preserveFocus) => this.openPanel(preserveFocus),
+        waitReady: (context) => this.waitForStateReady(context),
+        createWorktree: (opts) => this.createWorktreeOnDisk(opts),
+        claimRequest: (id) => {
+          if (this.toolRequests.has(id)) return false
+          const oldest = this.toolRequests.size >= 100 ? this.toolRequests.values().next().value : undefined
+          if (oldest) this.toolRequests.delete(oldest)
+          this.toolRequests.add(id)
+          return true
+        },
+        cleanupWorktree: async (wid, dir) => {
+          this.getStateManager()?.removeWorktree(wid)
+          await this.getWorktreeManager()?.removeWorktree(dir)
+          this.pushState()
+        },
+        setup: (dir, branch, id) => this.runSetupScriptForWorktree(dir, branch, id),
+        createSessionInWorktree: (dir, branch, id) => this.createSessionInWorktree(dir, branch, id),
+        registerWorktreeSession: (sid, dir) => this.registerWorktreeSession(sid, dir),
+        notifyReady: (sid, result, wid) => this.notifyWorktreeReady(sid, result, wid),
+        push: () => this.pushState(),
+        post: (msg) => this.postToWebview(msg as AgentManagerOutMessage),
+        capture: (event, props) => this.host.capture(event, props),
+        log: (...args) => this.log(...args),
+        error: (msg) => this.host.showError(msg),
+      },
+      req,
+    )
+  }
+
   /** Close (remove) a session from its worktree. */
   private async onCloseSession(sessionId: string): Promise<null> {
     const state = this.getStateManager()
@@ -1546,6 +1596,7 @@ export class AgentManagerProvider implements Disposable {
   }
 
   public dispose(): void {
+    this.unsubTool?.()
     this.connectionService.unregisterFocused("agent-manager")
     this.connectionService.registerOpen("agent-manager", [])
     this.diffs.stop()
