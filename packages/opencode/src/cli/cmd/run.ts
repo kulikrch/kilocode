@@ -29,6 +29,8 @@ import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util"
 import { importCloudSession, validateCloudFork } from "@/kilocode/cloud-session" // kilocode_change
 import { AppRuntime } from "@/effect/app-runtime"
+import { KiloRunAuto } from "@/kilocode/cli/run-auto" // kilocode_change
+import { KiloHeadless } from "@/kilocode/permission/headless" // kilocode_change
 
 type ToolProps<T> = {
   input: Tool.InferParameters<T>
@@ -486,6 +488,9 @@ export const RunCommand = cmd({
 
           if (event.type === "message.part.updated") {
             const part = event.properties.part
+            // kilocode_change start - track Task child sessions so permission replies can target them
+            KiloRunAuto.track(auto, part)
+            // kilocode_change end
             if (part.sessionID !== sessionID) continue
 
             if (part.type === "tool" && (part.state.status === "completed" || part.state.status === "error")) {
@@ -580,25 +585,55 @@ export const RunCommand = cmd({
 
           if (event.type === "permission.asked") {
             const permission = event.properties
-            if (permission.sessionID !== sessionID) continue
-
+            // kilocode_change start - auto/attach must handle tracked Task child permissions too
             if (args.auto) {
-              // kilocode_change - In auto mode, automatically approve all permissions without prompting
+              if (!KiloRunAuto.allowed(auto, permission.sessionID)) continue
               await sdk.permission.reply({
                 requestID: permission.id,
                 reply: "once",
               })
-            } else {
+              continue
+            }
+
+            if (permission.sessionID !== sessionID) {
+              if (!KiloRunAuto.allowed(auto, permission.sessionID)) continue
+              if (args["dangerously-skip-permissions"]) {
+                await sdk.permission.reply({
+                  requestID: permission.id,
+                  reply: "once",
+                })
+                continue
+              }
               UI.println(
                 UI.Style.TEXT_WARNING_BOLD + "!",
                 UI.Style.TEXT_NORMAL +
-                  `permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
+                  `subagent permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
               )
               await sdk.permission.reply({
                 requestID: permission.id,
                 reply: "reject",
               })
+              continue
             }
+
+            if (args["dangerously-skip-permissions"]) {
+              await sdk.permission.reply({
+                requestID: permission.id,
+                reply: "once",
+              })
+              continue
+            }
+
+            UI.println(
+              UI.Style.TEXT_WARNING_BOLD + "!",
+              UI.Style.TEXT_NORMAL +
+                `permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
+            )
+            await sdk.permission.reply({
+              requestID: permission.id,
+              reply: "reject",
+            })
+            // kilocode_change end
           }
           // kilocode_change start - network retry handling
           if (event.type === "session.network.asked") {
@@ -691,6 +726,11 @@ export const RunCommand = cmd({
         UI.error("Session not found")
         process.exit(1)
       }
+      // kilocode_change start - track Task children; plain local headless runs deny subagent asks instead of hanging
+      const auto = KiloRunAuto.create(sessionID)
+      const headless = !args.attach && !args.auto && !args["dangerously-skip-permissions"]
+      if (headless) KiloHeadless.mark(sessionID)
+      // kilocode_change end
       await share(sdk, sessionID)
 
       loop().catch((e) => {
@@ -698,24 +738,28 @@ export const RunCommand = cmd({
         process.exit(1)
       })
 
-      if (args.command) {
-        await sdk.session.command({
-          sessionID,
-          agent,
-          model: args.model,
-          command: args.command,
-          arguments: message,
-          variant: args.variant,
-        })
-      } else {
-        const model = args.model ? Provider.parseModel(args.model) : undefined
-        await sdk.session.prompt({
-          sessionID,
-          agent,
-          model,
-          variant: args.variant,
-          parts: [...files, { type: "text", text: message }],
-        })
+      try {
+        if (args.command) {
+          await sdk.session.command({
+            sessionID,
+            agent,
+            model: args.model,
+            command: args.command,
+            arguments: message,
+            variant: args.variant,
+          })
+        } else {
+          const model = args.model ? Provider.parseModel(args.model) : undefined
+          await sdk.session.prompt({
+            sessionID,
+            agent,
+            model,
+            variant: args.variant,
+            parts: [...files, { type: "text", text: message }],
+          })
+        }
+      } finally {
+        if (headless) KiloHeadless.clear(sessionID)
       }
     }
 
