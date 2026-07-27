@@ -246,6 +246,9 @@ const InfoSchema = Schema.Struct({
       disable_paste_summary: Schema.optional(Schema.Boolean),
       batch_tool: Schema.optional(Schema.Boolean).annotate({ description: "Enable the batch tool" }),
       codebase_search: Schema.optional(Schema.Boolean).annotate({ description: "Enable AI-powered codebase search" }), // kilocode_change
+      agent_requirements: Schema.optional(Schema.Boolean).annotate({
+        description: "Require declared agent skills, MCPs, and VS Code extensions before prompts can run",
+      }), // kilocode_change
       // kilocode_change start - enable telemetry by default
       openTelemetry: Schema.Boolean.pipe(Schema.optional, Schema.withDecodingDefault(Effect.succeed(true))).annotate({
         description: "Enable telemetry. Set to false to opt-out.",

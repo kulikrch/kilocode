@@ -226,6 +226,35 @@ test("custom agent from config creates new agent", async () => {
   })
 })
 
+// kilocode_change start - keep Kilo metadata out of provider options
+test("custom agent metadata is carried as typed fields, not provider options", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        reviewer: {
+          displayName: "Code Reviewer",
+          source: "organization",
+          options: {
+            displayName: "Legacy Name",
+            source: "global",
+            reasoningEffort: "high",
+          },
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agent = await load(tmp.path, (svc) => svc.get("reviewer"))
+      expect(agent?.displayName).toBe("Code Reviewer")
+      expect(agent?.source).toBe("organization")
+      expect(agent?.options).toEqual({ reasoningEffort: "high" })
+    },
+  })
+})
+// kilocode_change end
+
 test("custom agent config overrides native agent properties", async () => {
   await using tmp = await tmpdir({
     config: {

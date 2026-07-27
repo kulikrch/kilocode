@@ -1,6 +1,8 @@
 // kilocode_change - new file
 import { CodebaseSearchTool } from "../../tool/warpgrep"
 import { RecallTool } from "../../tool/recall"
+import { AgentManagerTool } from "./agent-manager"
+import { AgentManagerModelsTool } from "./agent-manager-models"
 import { Tool } from "../../tool"
 import { Flag } from "@/flag/flag"
 import { ProviderID } from "../../provider/schema"
@@ -13,16 +15,20 @@ export namespace KiloToolRegistry {
     return Effect.gen(function* () {
       const codebase = yield* CodebaseSearchTool
       const recall = yield* RecallTool
-      return { codebase, recall }
+      const manager = yield* AgentManagerTool
+      const models = yield* AgentManagerModelsTool
+      return { codebase, recall, manager, models }
     })
   }
 
   /** Finalize Kilo-specific tools into Tool.Defs. Call this inside the InstanceState state Effect —
    * it has no Service deps beyond what Tool.init itself needs. */
-  export function build(tools: { codebase: Tool.Info; recall: Tool.Info }) {
+  export function build(tools: { codebase: Tool.Info; recall: Tool.Info; manager: Tool.Info; models: Tool.Info }) {
     return Effect.all({
       codebase: Tool.init(tools.codebase),
       recall: Tool.init(tools.recall),
+      manager: Tool.init(tools.manager),
+      models: Tool.init(tools.models),
     })
   }
 
@@ -43,10 +49,14 @@ export namespace KiloToolRegistry {
 
   /** Kilo-specific tools to append to the builtin list */
   export function extra(
-    tools: { codebase: Tool.Def; recall: Tool.Def },
+    tools: { codebase: Tool.Def; recall: Tool.Def; manager: Tool.Def; models: Tool.Def },
     cfg: { experimental?: { codebase_search?: boolean } },
   ): Tool.Def[] {
-    return [...(cfg.experimental?.codebase_search === true ? [tools.codebase] : []), tools.recall]
+    return [
+      ...(cfg.experimental?.codebase_search === true ? [tools.codebase] : []),
+      tools.recall,
+      ...(Flag.KILO_CLIENT === "vscode" ? [tools.manager, tools.models] : []),
+    ]
   }
 
   /** Check for E2E LLM URL (uses KILO_E2E_LLM_URL env var) */

@@ -13,6 +13,7 @@ import { ConfigModelID } from "./model-id"
 import { ConfigPermission } from "./permission"
 // kilocode_change start
 import { KilocodeConfig } from "@/kilocode/config/config"
+import { Requirements as AgentRequirements } from "@/kilocode/agent-requirements"
 import type { Warning } from "./config"
 // kilocode_change end
 
@@ -30,6 +31,7 @@ const Color = Schema.Union([
 // via ZodOverride rather than a pure Schema reference.  This preserves the
 // `$ref: PermissionConfig` emitted in openapi.json.
 const PermissionRef = Schema.Any.annotate({ [ZodOverride]: ConfigPermission.Info })
+const RequirementsRef = Schema.Any.annotate({ [ZodOverride]: AgentRequirements }) // kilocode_change
 
 const AgentSchema = Schema.StructWithRest(
   Schema.Struct({
@@ -46,6 +48,14 @@ const AgentSchema = Schema.StructWithRest(
     disable: Schema.optional(Schema.Boolean),
     description: Schema.optional(Schema.String).annotate({ description: "Description of when to use the agent" }),
     mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])),
+    // kilocode_change start - typed metadata carriers so they never fall into `options` (provider params)
+    displayName: Schema.optional(Schema.String).annotate({
+      description: "Human-readable name shown in the UI (e.g. for organization or marketplace agents)",
+    }),
+    source: Schema.optional(Schema.String).annotate({
+      description: "Origin marker for managed agents (organization | global | project)",
+    }),
+    // kilocode_change end
     hidden: Schema.optional(Schema.Boolean).annotate({
       description: "Hide this subagent from the @ autocomplete menu (default: false, only applies to mode: subagent)",
     }),
@@ -58,6 +68,7 @@ const AgentSchema = Schema.StructWithRest(
     }),
     maxSteps: Schema.optional(PositiveInt).annotate({ description: "@deprecated Use 'steps' field instead." }),
     permission: Schema.optional(PermissionRef),
+    requirements: Schema.optional(RequirementsRef), // kilocode_change
   }),
   [Schema.Record(Schema.String, Schema.Any)],
 )
@@ -71,12 +82,15 @@ const KNOWN_KEYS = new Set([
   "temperature",
   "top_p",
   "mode",
+  "displayName", // kilocode_change
+  "source", // kilocode_change
   "hidden",
   "color",
   "steps",
   "maxSteps",
   "options",
   "permission",
+  "requirements", // kilocode_change
   "disable",
   "tools",
 ])
