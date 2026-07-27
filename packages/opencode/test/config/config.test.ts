@@ -639,7 +639,7 @@ test("migrates mode field to agent field", async () => {
       expect(config.agent?.["test_mode"]).toEqual({
         model: "test/model",
         temperature: 0.5,
-        mode: "primary",
+        mode: "subagent", // kilocode_change
         options: {},
         permission: {},
       })

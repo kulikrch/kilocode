@@ -47,10 +47,10 @@ Also loaded from `.kilocode/` and `.opencode/` directories (legacy), and plural 
 ```yaml
 ---
 description: When to use this agent
-mode: primary # primary | subagent | all
+mode: subagent # config-defined agents are loaded as subagents
 model: anthropic/claude-sonnet # optional override
 steps: 25 # max agentic iterations
-hidden: false # hide from @ menu (subagent only)
+hidden: false # hide from @ menu
 color: "#FF5733" # hex or theme name
 permission: # optional, agent-level permissions
   bash: allow
@@ -61,7 +61,7 @@ permission: # optional, agent-level permissions
 System prompt for this agent.
 ```
 
-`mode` values: `primary` = selectable as main agent, `subagent` = only via Task tool, `all` = both.
+Config-defined agents are always loaded as subagents. `primary` and `all` values in config are ignored for new agents and cannot make them selectable as the main agent.
 
 ## Workflows (legacy)
 

@@ -8,7 +8,7 @@ describe("parseImport", () => {
       description: "Reviews code",
       prompt: "You review code.",
       model: "anthropic/claude-sonnet-4-20250514",
-      mode: "primary",
+      mode: "subagent",
       temperature: 0.7,
       top_p: 0.9,
       steps: 10,
@@ -21,7 +21,7 @@ describe("parseImport", () => {
         description: "Reviews code",
         prompt: "You review code.",
         model: "anthropic/claude-sonnet-4-20250514",
-        mode: "primary",
+        mode: "subagent",
         temperature: 0.7,
         top_p: 0.9,
         steps: 10,
@@ -29,13 +29,13 @@ describe("parseImport", () => {
     })
   })
 
-  it("defaults mode to primary when omitted", () => {
+  it("defaults mode to subagent when omitted", () => {
     const json = JSON.stringify({ name: "my-agent" })
     const result = parseImport(json, [])
     expect(result).toEqual({
       ok: true,
       name: "my-agent",
-      config: { mode: "primary" },
+      config: { mode: "subagent" },
     })
   })
 
@@ -86,15 +86,15 @@ describe("parseImport", () => {
     expect(result).toEqual({
       ok: true,
       name: "test",
-      config: { mode: "primary" },
+      config: { mode: "subagent" },
     })
   })
 
-  it("accepts all valid mode values", () => {
+  it("normalizes old mode values to subagent", () => {
     for (const mode of ["subagent", "primary", "all"] as const) {
       const json = JSON.stringify({ name: "test", mode })
       const result = parseImport(json, [])
-      expect(result).toEqual({ ok: true, name: "test", config: { mode } })
+      expect(result).toEqual({ ok: true, name: "test", config: { mode: "subagent" } })
     }
   })
 
@@ -109,14 +109,14 @@ describe("parseImport", () => {
       steps: "many",
     })
     const result = parseImport(json, [])
-    expect(result).toEqual({ ok: true, name: "test", config: { mode: "primary" } })
+    expect(result).toEqual({ ok: true, name: "test", config: { mode: "subagent" } })
   })
 
   it("trims whitespace from name", () => {
     const json = JSON.stringify({ name: "  trimmed  " })
     // "trimmed" doesn't have hyphens or digits so it should be valid
     const result = parseImport(json, [])
-    expect(result).toEqual({ ok: true, name: "trimmed", config: { mode: "primary" } })
+    expect(result).toEqual({ ok: true, name: "trimmed", config: { mode: "subagent" } })
   })
 
   it("preserves valid permission entries", () => {
@@ -129,7 +129,7 @@ describe("parseImport", () => {
       ok: true,
       name: "reviewer",
       config: {
-        mode: "primary",
+        mode: "subagent",
         permission: { read: "allow", bash: "allow", edit: "deny", mcp: "ask" },
       },
     })
@@ -144,7 +144,7 @@ describe("parseImport", () => {
     expect(result).toEqual({
       ok: true,
       name: "test",
-      config: { mode: "primary", permission: { read: "allow" } },
+      config: { mode: "subagent", permission: { read: "allow" } },
     })
   })
 
@@ -158,7 +158,7 @@ describe("parseImport", () => {
       ok: true,
       name: "test",
       config: {
-        mode: "primary",
+        mode: "subagent",
         permission: { bash: { "*": "ask", uname: "allow" }, read: "allow" },
       },
     })
@@ -167,12 +167,12 @@ describe("parseImport", () => {
   it("ignores non-object permission field", () => {
     const json = JSON.stringify({ name: "test", permission: "allow" })
     const result = parseImport(json, [])
-    expect(result).toEqual({ ok: true, name: "test", config: { mode: "primary" } })
+    expect(result).toEqual({ ok: true, name: "test", config: { mode: "subagent" } })
   })
 
   it("round-trips permission through export and import", () => {
     const cfg = {
-      mode: "primary" as const,
+      mode: "subagent" as const,
       prompt: "Review code",
       permission: { read: "allow" as const, edit: "deny" as const },
     }
@@ -182,7 +182,7 @@ describe("parseImport", () => {
     expect(result).toEqual({
       ok: true,
       name: "reviewer",
-      config: { mode: "primary", prompt: "Review code", permission: { read: "allow", edit: "deny" } },
+      config: { mode: "subagent", prompt: "Review code", permission: { read: "allow", edit: "deny" } },
     })
   })
 })
@@ -193,7 +193,7 @@ describe("buildExport", () => {
       description: "Reviews code",
       prompt: "You review code.",
       model: "anthropic/claude-sonnet-4-20250514",
-      mode: "primary",
+      mode: "subagent",
       temperature: 0.7,
       top_p: 0.9,
       steps: 10,
@@ -203,7 +203,7 @@ describe("buildExport", () => {
       description: "Reviews code",
       prompt: "You review code.",
       model: "anthropic/claude-sonnet-4-20250514",
-      mode: "primary",
+      mode: "subagent",
       temperature: 0.7,
       top_p: 0.9,
       steps: 10,
@@ -211,7 +211,7 @@ describe("buildExport", () => {
   })
 
   it("handles empty config", () => {
-    expect(buildExport("minimal", {})).toEqual({ name: "minimal" })
+    expect(buildExport("minimal", {})).toEqual({ name: "minimal", mode: "subagent" })
   })
 })
 

@@ -13,7 +13,7 @@ import { Instance } from "../../project/instance"
 import { EOL } from "os"
 import type { Argv } from "yargs"
 
-type AgentMode = "all" | "primary" | "subagent"
+type AgentMode = "subagent" // kilocode_change
 
 const AVAILABLE_TOOLS = ["bash", "read", "write", "edit", "glob", "grep", "webfetch", "task", "todowrite"]
 
@@ -32,8 +32,9 @@ const AgentCreateCommand = cmd({
       })
       .option("mode", {
         type: "string",
-        describe: "agent mode",
-        choices: ["all", "primary", "subagent"] as const,
+        describe: "agent mode. Created agents are always subagents.", // kilocode_change
+        choices: ["subagent"] as const, // kilocode_change
+        hidden: true, // kilocode_change
       })
       .option("tools", {
         type: "string",
@@ -53,7 +54,7 @@ const AgentCreateCommand = cmd({
         const cliMode = args.mode as AgentMode | undefined
         const cliTools = args.tools
 
-        const isFullyNonInteractive = cliPath && cliDescription && cliMode && cliTools !== undefined
+        const isFullyNonInteractive = cliPath && cliDescription && cliTools !== undefined // kilocode_change
 
         if (!isFullyNonInteractive) {
           UI.empty()
@@ -137,35 +138,7 @@ const AgentCreateCommand = cmd({
           selectedTools = result
         }
 
-        // Get mode
-        let mode: AgentMode
-        if (cliMode) {
-          mode = cliMode
-        } else {
-          const modeResult = await prompts.select({
-            message: "Agent mode",
-            options: [
-              {
-                label: "All",
-                value: "all" as const,
-                hint: "Can function in both primary and subagent roles",
-              },
-              {
-                label: "Primary",
-                value: "primary" as const,
-                hint: "Acts as a primary/main agent",
-              },
-              {
-                label: "Subagent",
-                value: "subagent" as const,
-                hint: "Can be used as a subagent by other agents",
-              },
-            ],
-            initialValue: "all" as const,
-          })
-          if (prompts.isCancel(modeResult)) throw new UI.CancelledError()
-          mode = modeResult
-        }
+        const mode: AgentMode = cliMode ?? "subagent" // kilocode_change
 
         // Build tools config
         const tools: Record<string, boolean> = {}

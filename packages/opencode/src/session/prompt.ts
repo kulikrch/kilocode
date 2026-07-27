@@ -55,6 +55,7 @@ import { InstanceState } from "@/effect"
 import { TaskTool, type TaskPromptOps } from "@/tool/task"
 import { SessionRunState } from "./run-state"
 import { EffectBridge } from "@/effect"
+import * as AgentRequirements from "@/kilocode/agent-requirements" // kilocode_change
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -926,6 +927,24 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       return yield* provider.defaultModel()
     })
 
+    // kilocode_change start - block prompts for agents with unmet requirements
+    const guardRequirements = Effect.fn("SessionPrompt.guardRequirements")(function* (
+      sessionID: SessionID,
+      agent: Agent.Info,
+    ) {
+      const exit = yield* Effect.exit(agents.guardRequirements(agent))
+      if (Exit.isSuccess(exit)) return
+      const error = Cause.squash(exit.cause)
+      if (AgentRequirements.BlockedError.isInstance(error)) {
+        yield* bus.publish(Session.Event.Error, {
+          sessionID,
+          error: new NamedError.Unknown({ message: error.data.message }).toObject(),
+        })
+      }
+      throw error
+    })
+    // kilocode_change end
+
     const createUserMessage = Effect.fn("SessionPrompt.createUserMessage")(function* (input: PromptInput) {
       const agentName = input.agent || (yield* agents.defaultAgent())
       const ag = yield* agents.get(agentName)
@@ -936,6 +955,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         yield* bus.publish(Session.Event.Error, { sessionID: input.sessionID, error: error.toObject() })
         throw error
       }
+      yield* guardRequirements(input.sessionID, ag) // kilocode_change
 
       const model = input.model ?? ag.model ?? (yield* lastModel(input.sessionID))
       const same = ag.model && model.providerID === ag.model.providerID && model.modelID === ag.model.modelID
@@ -1729,6 +1749,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         yield* bus.publish(Session.Event.Error, { sessionID: input.sessionID, error: error.toObject() })
         throw error
       }
+      yield* guardRequirements(input.sessionID, agent) // kilocode_change
 
       const templateParts = yield* resolvePromptParts(template)
       const isSubtask = (agent.mode === "subagent" && cmd.subtask !== false) || cmd.subtask === true

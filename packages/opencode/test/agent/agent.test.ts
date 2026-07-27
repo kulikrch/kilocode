@@ -221,10 +221,39 @@ test("custom agent from config creates new agent", async () => {
       expect(custom?.temperature).toBe(0.5)
       expect(custom?.topP).toBe(0.9)
       expect(custom?.native).toBe(false)
-      expect(custom?.mode).toBe("all")
+      expect(custom?.mode).toBe("subagent") // kilocode_change
     },
   })
 })
+
+// kilocode_change start - keep Kilo metadata out of provider options
+test("custom agent metadata is carried as typed fields, not provider options", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        reviewer: {
+          displayName: "Code Reviewer",
+          source: "organization",
+          options: {
+            displayName: "Legacy Name",
+            source: "global",
+            reasoningEffort: "high",
+          },
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agent = await load(tmp.path, (svc) => svc.get("reviewer"))
+      expect(agent?.displayName).toBe("Code Reviewer")
+      expect(agent?.source).toBe("organization")
+      expect(agent?.options).toEqual({ reasoningEffort: "high" })
+    },
+  })
+})
+// kilocode_change end
 
 test("custom agent config overrides native agent properties", async () => {
   await using tmp = await tmpdir({
@@ -351,7 +380,8 @@ test("agent steps/maxSteps config sets steps property", async () => {
   })
 })
 
-test("agent mode can be overridden", async () => {
+// kilocode_change start - config-defined agents cannot become selectable primary agents
+test("config cannot promote a subagent to primary", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
@@ -363,10 +393,49 @@ test("agent mode can be overridden", async () => {
     directory: tmp.path,
     fn: async () => {
       const explore = await load(tmp.path, (svc) => svc.get("explore"))
-      expect(explore?.mode).toBe("primary")
+      expect(explore?.mode).toBe("subagent")
     },
   })
 })
+
+test("config cannot create a primary custom agent", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        reviewer: { mode: "primary" },
+        writer: { mode: "all" },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const reviewer = await load(tmp.path, (svc) => svc.get("reviewer"))
+      const writer = await load(tmp.path, (svc) => svc.get("writer"))
+      expect(reviewer?.mode).toBe("subagent")
+      expect(writer?.mode).toBe("subagent")
+    },
+  })
+})
+
+test("config keeps native primary agents primary", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        code: { mode: "all", description: "Configured code agent" },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const code = await load(tmp.path, (svc) => svc.get("code"))
+      expect(code?.mode).toBe("primary")
+      expect(code?.description).toBe("Configured code agent")
+    },
+  })
+})
+// kilocode_change end
 
 test("agent name can be overridden", async () => {
   await using tmp = await tmpdir({
@@ -477,12 +546,12 @@ test("multiple custom agents can be defined", async () => {
       const agentA = await load(tmp.path, (svc) => svc.get("agent_a"))
       const agentB = await load(tmp.path, (svc) => svc.get("agent_b"))
       expect(agentA?.description).toBe("Agent A")
-      expect(agentA?.mode).toBe("subagent")
+      expect(agentA?.mode).toBe("subagent") // kilocode_change
       expect(agentB?.description).toBe("Agent B")
-      expect(agentB?.mode).toBe("primary")
+      expect(agentB?.mode).toBe("subagent") // kilocode_change
     },
   })
-})
+}) // kilocode_change
 
 test("Agent.list keeps the default agent first and sorts the rest by name", async () => {
   await using tmp = await tmpdir({
@@ -721,6 +790,7 @@ test("defaultAgent returns build when no default_agent config", async () => {
   })
 })
 
+// kilocode_change start - plan remains a valid primary default agent
 test("defaultAgent respects default_agent config set to plan", async () => {
   await using tmp = await tmpdir({
     config: {
@@ -735,14 +805,17 @@ test("defaultAgent respects default_agent config set to plan", async () => {
     },
   })
 })
+// kilocode_change end
 
-test("defaultAgent respects default_agent config set to custom agent with mode all", async () => {
+// kilocode_change start - default_agent cannot point at config-created subagents
+test("defaultAgent rejects default_agent config set to custom agent", async () => {
   await using tmp = await tmpdir({
     config: {
       default_agent: "my_custom",
       agent: {
         my_custom: {
           description: "My custom agent",
+          mode: "all",
         },
       },
     },
@@ -750,11 +823,13 @@ test("defaultAgent respects default_agent config set to custom agent with mode a
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      const agent = await load(tmp.path, (svc) => svc.defaultAgent())
-      expect(agent).toBe("my_custom")
+      await expect(load(tmp.path, (svc) => svc.defaultAgent())).rejects.toThrow(
+        'default agent "my_custom" is a subagent',
+      )
     },
   })
 })
+// kilocode_change end
 
 test("defaultAgent throws when default_agent points to subagent", async () => {
   await using tmp = await tmpdir({

@@ -367,14 +367,23 @@ describe("tool.task", () => {
                 pattern: "*",
                 action: "deny",
               },
+              {
+                permission: "question",
+                pattern: "*",
+                action: "deny",
+              },
             ]),
           )
           // kilocode_change end
+          // kilocode_change start - subagents cannot ask questions or delegate again
           expect(seen?.tools).toEqual({
+            question: false,
             todowrite: false,
+            task: false,
             bash: false,
             read: false,
           })
+          // kilocode_change end
         }),
       {
         config: {
@@ -392,6 +401,55 @@ describe("tool.task", () => {
           },
         },
       },
+    ), // kilocode_change
+  ) // kilocode_change
+
+  // kilocode_change start - task subagent cost propagation
+  it.live("execute propagates child assistant cost to the parent task message", () =>
+    provideTmpdirInstance(() =>
+      Effect.gen(function* () {
+        const sessions = yield* Session.Service
+        const { chat, assistant } = yield* seed()
+        const tool = yield* TaskTool
+        const def = yield* tool.init()
+        const promptOps: TaskPromptOps = {
+          cancel() {},
+          resolvePromptParts: (template) => Effect.succeed([{ type: "text" as const, text: template }]),
+          prompt: (input) =>
+            Effect.gen(function* () {
+              const msg = reply(input, "costly")
+              if (msg.info.role !== "assistant") throw new Error("expected assistant reply")
+              msg.info.cost = 1.25
+              yield* sessions.updateMessage(msg.info)
+              return msg
+            }),
+        }
+
+        yield* def.execute(
+          {
+            description: "inspect cost",
+            prompt: "look into billing",
+            subagent_type: "general",
+          },
+          {
+            sessionID: chat.id,
+            messageID: assistant.id,
+            agent: "build",
+            abort: new AbortController().signal,
+            extra: { promptOps },
+            messages: [],
+            metadata: () => Effect.void,
+            ask: () => Effect.void,
+          },
+        )
+
+        const parent = yield* sessions.get(assistant.sessionID).pipe(
+          Effect.andThen(() => Effect.sync(() => MessageV2.get({ sessionID: chat.id, messageID: assistant.id }))),
+        )
+        expect(parent.info.role).toBe("assistant")
+        if (parent.info.role === "assistant") expect(parent.info.cost).toBe(1.25)
+      }),
     ),
   )
+  // kilocode_change end
 })

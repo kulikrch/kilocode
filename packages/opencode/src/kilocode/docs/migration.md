@@ -136,7 +136,7 @@ customModes:
 {
   "agent": {
     "translate": {
-      "mode": "primary",
+      "mode": "subagent",
       "description": "Translate content between languages",
       "prompt": "You are a linguistic specialist focused on translation.\n\nWhen translating:\n- Maintain consistent terminology\n- Preserve formatting",
       "permission": {

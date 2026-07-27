@@ -2,6 +2,7 @@ export * as ConfigAgent from "./agent"
 
 import { Schema } from "effect"
 import z from "zod"
+import path from "path" // kilocode_change
 import { Bus } from "@/bus"
 import { zod, ZodOverride } from "@/util/effect-zod"
 import { Log } from "../util"
@@ -11,8 +12,10 @@ import { configEntryNameFromPath } from "./entry-name"
 import * as ConfigMarkdown from "./markdown"
 import { ConfigModelID } from "./model-id"
 import { ConfigPermission } from "./permission"
+import { ConfigVariable } from "./variable" // kilocode_change
 // kilocode_change start
 import { KilocodeConfig } from "@/kilocode/config/config"
+import { Requirements as AgentRequirements } from "@/kilocode/agent-requirements"
 import type { Warning } from "./config"
 // kilocode_change end
 
@@ -25,11 +28,13 @@ const Color = Schema.Union([
   Schema.Literals(["primary", "secondary", "accent", "success", "warning", "error", "info"]),
 ])
 
+// kilocode_change start - agent schema extensions for permissions and requirements
 // ConfigPermission.Info is a zod schema (its `.preprocess(...).transform(...)`
 // shape lives outside the Effect Schema type system), so the walker reaches it
 // via ZodOverride rather than a pure Schema reference.  This preserves the
 // `$ref: PermissionConfig` emitted in openapi.json.
 const PermissionRef = Schema.Any.annotate({ [ZodOverride]: ConfigPermission.Info })
+const RequirementsRef = Schema.Any.annotate({ [ZodOverride]: AgentRequirements }) // kilocode_change
 
 const AgentSchema = Schema.StructWithRest(
   Schema.Struct({
@@ -45,7 +50,16 @@ const AgentSchema = Schema.StructWithRest(
     }),
     disable: Schema.optional(Schema.Boolean),
     description: Schema.optional(Schema.String).annotate({ description: "Description of when to use the agent" }),
-    mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])),
+    mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])).annotate({
+      description:
+        "Agent mode. Config-defined agents are loaded as subagents; primary/all are accepted for compatibility but cannot create selectable main agents.",
+    }),
+    displayName: Schema.optional(Schema.String).annotate({
+      description: "Human-readable name shown in the UI (e.g. for organization or marketplace agents)",
+    }),
+    source: Schema.optional(Schema.String).annotate({
+      description: "Origin marker for managed agents (organization | global | project)",
+    }),
     hidden: Schema.optional(Schema.Boolean).annotate({
       description: "Hide this subagent from the @ autocomplete menu (default: false, only applies to mode: subagent)",
     }),
@@ -58,6 +72,7 @@ const AgentSchema = Schema.StructWithRest(
     }),
     maxSteps: Schema.optional(PositiveInt).annotate({ description: "@deprecated Use 'steps' field instead." }),
     permission: Schema.optional(PermissionRef),
+    requirements: Schema.optional(RequirementsRef), // kilocode_change
   }),
   [Schema.Record(Schema.String, Schema.Any)],
 )
@@ -71,15 +86,19 @@ const KNOWN_KEYS = new Set([
   "temperature",
   "top_p",
   "mode",
+  "displayName", // kilocode_change
+  "source", // kilocode_change
   "hidden",
   "color",
   "steps",
   "maxSteps",
   "options",
   "permission",
+  "requirements", // kilocode_change
   "disable",
   "tools",
 ])
+// kilocode_change end
 
 // Post-parse normalisation:
 //  - Promote any unknown-but-present keys into `options` so they survive the
@@ -158,10 +177,27 @@ export async function load(dir: string, warnings?: Warning[]) {
     // kilocode_change end
     const name = configEntryNameFromPath(item, patterns)
 
+    // kilocode_change start - substitute agent prompt variables relative to the agent file
+    const prompt = await ConfigVariable.substitute({
+      text: md.content.trim(),
+      type: "virtual",
+      dir: path.dirname(item),
+      source: item,
+      missing: "empty",
+      escapeJson: false,
+    }).catch((err): string | undefined => {
+      const message = err instanceof Error ? err.message : `Failed to substitute variables in agent ${item}`
+      if (warnings) warnings.push({ path: item, message })
+      log.error("failed to substitute agent prompt", { agent: item, err })
+      return undefined
+    })
+    if (prompt === undefined) continue
+    // kilocode_change end
+
     const config = {
       name,
       ...md.data,
-      prompt: md.content.trim(),
+      prompt, // kilocode_change
     }
     const parsed = Info.safeParse(config)
     if (parsed.success) {
@@ -212,7 +248,7 @@ export async function loadMode(dir: string, warnings?: Warning[]) {
     if (parsed.success) {
       result[config.name] = {
         ...parsed.data,
-        mode: "primary" as const,
+        mode: "subagent" as const, // kilocode_change
       }
       continue
     }
