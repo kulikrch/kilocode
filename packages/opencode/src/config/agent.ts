@@ -2,6 +2,7 @@ export * as ConfigAgent from "./agent"
 
 import { Schema } from "effect"
 import z from "zod"
+import path from "path"
 import { Bus } from "@/bus"
 import { zod, ZodOverride } from "@/util/effect-zod"
 import { Log } from "../util"
@@ -11,6 +12,7 @@ import { configEntryNameFromPath } from "./entry-name"
 import * as ConfigMarkdown from "./markdown"
 import { ConfigModelID } from "./model-id"
 import { ConfigPermission } from "./permission"
+import { ConfigVariable } from "./variable"
 // kilocode_change start
 import { KilocodeConfig } from "@/kilocode/config/config"
 import { Requirements as AgentRequirements } from "@/kilocode/agent-requirements"
@@ -26,6 +28,7 @@ const Color = Schema.Union([
   Schema.Literals(["primary", "secondary", "accent", "success", "warning", "error", "info"]),
 ])
 
+// kilocode_change start - agent schema extensions for permissions and requirements
 // ConfigPermission.Info is a zod schema (its `.preprocess(...).transform(...)`
 // shape lives outside the Effect Schema type system), so the walker reaches it
 // via ZodOverride rather than a pure Schema reference.  This preserves the
@@ -48,14 +51,12 @@ const AgentSchema = Schema.StructWithRest(
     disable: Schema.optional(Schema.Boolean),
     description: Schema.optional(Schema.String).annotate({ description: "Description of when to use the agent" }),
     mode: Schema.optional(Schema.Literals(["subagent", "primary", "all"])),
-    // kilocode_change start - typed metadata carriers so they never fall into `options` (provider params)
     displayName: Schema.optional(Schema.String).annotate({
       description: "Human-readable name shown in the UI (e.g. for organization or marketplace agents)",
     }),
     source: Schema.optional(Schema.String).annotate({
       description: "Origin marker for managed agents (organization | global | project)",
     }),
-    // kilocode_change end
     hidden: Schema.optional(Schema.Boolean).annotate({
       description: "Hide this subagent from the @ autocomplete menu (default: false, only applies to mode: subagent)",
     }),
@@ -94,6 +95,7 @@ const KNOWN_KEYS = new Set([
   "disable",
   "tools",
 ])
+// kilocode_change end
 
 // Post-parse normalisation:
 //  - Promote any unknown-but-present keys into `options` so they survive the
@@ -172,10 +174,27 @@ export async function load(dir: string, warnings?: Warning[]) {
     // kilocode_change end
     const name = configEntryNameFromPath(item, patterns)
 
+    // kilocode_change start - substitute agent prompt variables relative to the agent file
+    const prompt = await ConfigVariable.substitute({
+      text: md.content.trim(),
+      type: "virtual",
+      dir: path.dirname(item),
+      source: item,
+      missing: "empty",
+      escapeJson: false,
+    }).catch((err): string | undefined => {
+      const message = err instanceof Error ? err.message : `Failed to substitute variables in agent ${item}`
+      if (warnings) warnings.push({ path: item, message })
+      log.error("failed to substitute agent prompt", { agent: item, err })
+      return undefined
+    })
+    if (prompt === undefined) continue
+    // kilocode_change end
+
     const config = {
       name,
       ...md.data,
-      prompt: md.content.trim(),
+      prompt,
     }
     const parsed = Info.safeParse(config)
     if (parsed.success) {

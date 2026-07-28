@@ -20,6 +20,7 @@ import { makeRuntime } from "@/effect/run-service" // kilocode_change
 import { ConfigProtection } from "@/kilocode/permission/config-paths" // kilocode_change
 import { Identifier } from "@/id/id" // kilocode_change
 import { drainCovered } from "@/kilocode/permission/drain" // kilocode_change
+import { KiloHeadless } from "@/kilocode/permission/headless" // kilocode_change
 
 const log = Log.create({ service: "permission" })
 
@@ -229,6 +230,14 @@ export const layer = Layer.effect(
       }
 
       if (!needsAsk) return
+
+      // kilocode_change start - headless subagent asks fail instead of queuing forever
+      if (KiloHeadless.denies(request.sessionID)) {
+        return yield* new DeniedError({
+          ruleset: ruleset.filter((rule) => Wildcard.match(request.permission, rule.permission)),
+        })
+      }
+      // kilocode_change end
 
       const id = request.id ?? PermissionID.ascending()
       // kilocode_change start — inject disableAlways metadata for config paths

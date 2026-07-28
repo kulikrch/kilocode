@@ -74,7 +74,7 @@ export interface Interface {
   }>
 }
 
-type State = Omit<Interface, "generate" | "requirementStatus" | "guardRequirements">
+type State = Omit<Interface, "generate" | "requirementStatus" | "guardRequirements"> // kilocode_change
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/Agent") {}
 

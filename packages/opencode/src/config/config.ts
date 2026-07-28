@@ -162,6 +162,21 @@ const InfoSchema = Schema.Struct({
   small_model: Schema.optional(Schema.NullOr(ConfigModelID)).annotate({
     description: "Small model to use for tasks like title generation in the format of provider/model",
   }),
+  // kilocode_change start - task subagent model defaults
+  subagent_model: Schema.optional(Schema.NullOr(ConfigModelID)).annotate({
+    description:
+      "Default model for task-tool subagents in the format of provider/model. If unset or unavailable, subagents inherit the calling agent model.",
+  }),
+  subagent_variant: Schema.optional(Schema.NullOr(Schema.String)).annotate({
+    description: "Default model variant for task-tool subagents when subagent_model is configured.",
+  }),
+  subagent_variant_overrides: Schema.optional(
+    Schema.NullOr(Schema.Record(Schema.String, Schema.NullOr(Schema.String))),
+  ).annotate({
+    description:
+      "Model-specific variant overrides for task-tool subagents, keyed by provider/model. Valid overrides take precedence over saved, agent-specific, and inherited variants.",
+  }),
+  // kilocode_change end
   // kilocode_change end
   // kilocode_change start - renamed from "build" to "code"
   default_agent: Schema.optional(Schema.String).annotate({
@@ -228,6 +243,7 @@ const InfoSchema = Schema.Struct({
     }),
   ),
   commit_message: KilocodeConfig.CommitMessageSchema, // kilocode_change
+  // kilocode_change start - compaction config
   compaction: Schema.optional(
     Schema.Struct({
       auto: Schema.optional(Schema.Boolean).annotate({
@@ -241,6 +257,7 @@ const InfoSchema = Schema.Struct({
       }),
     }),
   ),
+  // kilocode_change end
   experimental: Schema.optional(
     Schema.Struct({
       disable_paste_summary: Schema.optional(Schema.Boolean),
