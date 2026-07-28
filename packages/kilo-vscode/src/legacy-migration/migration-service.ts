@@ -896,7 +896,7 @@ function convertCustomMode(mode: LegacyCustomMode): AgentConfig {
     )
   }
   return {
-    mode: "primary",
+    mode: "subagent",
     description: mode.description ?? mode.whenToUse ?? mode.roleDefinition?.slice(0, 120),
     prompt: parts.filter(Boolean).join("\n\n"),
     permission: convertCustomModePermissions(mode.groups),

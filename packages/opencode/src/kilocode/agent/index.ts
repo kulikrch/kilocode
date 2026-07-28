@@ -184,6 +184,14 @@ export function processConfigItem(item: {
   }
 }
 
+type AgentMode = "subagent" | "primary" | "all"
+
+export function configMode(item: { native?: boolean; mode: AgentMode } | undefined): AgentMode {
+  if (!item?.native) return "subagent"
+  if (item.mode === "subagent") return "subagent"
+  return item.mode
+}
+
 // Returns experimental_telemetry config for generate calls.
 export function telemetryOptions(cfg: Config.Info) {
   return {

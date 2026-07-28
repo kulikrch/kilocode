@@ -36,7 +36,7 @@ describe("KilocodeConfigInjector", () => {
 
       expect(config.agent).toBeDefined()
       expect(config.agent.translate).toBeDefined()
-      expect(config.agent.translate.mode).toBe("primary")
+      expect(config.agent.translate.mode).toBe("subagent")
     })
 
     test("adds warnings for skipped default modes", async () => {

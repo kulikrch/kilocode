@@ -352,7 +352,7 @@ function convertModeToAgent(content: string): Record<string, unknown> {
 
   const prompt = [mode.roleDefinition, mode.customInstructions].filter(Boolean).join("\n\n")
   return {
-    mode: "primary",
+    mode: "subagent",
     description: mode.description ?? mode.whenToUse ?? mode.name,
     prompt,
     permission,

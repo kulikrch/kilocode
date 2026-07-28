@@ -52,7 +52,7 @@ const ModeCreateView: Component<Props> = (props) => {
     }
     const existing = config().agent ?? {}
     const partial: Partial<AgentConfig> = {
-      mode: "primary",
+      mode: "subagent",
       description: description().trim() || undefined,
       prompt: prompt().trim() || undefined,
     }

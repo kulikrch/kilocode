@@ -265,16 +265,16 @@ export const layer = Layer.effect(
         // kilocode_change start - preprocess config to remap "build" key → "code"
         const agentConfigs = KiloAgent.preprocessConfig(cfg.agent ?? {})
         for (const [key, value] of Object.entries(agentConfigs)) {
-          // kilocode_change end
           if (value.disable) {
             delete agents[key]
             continue
           }
+          const mode = KiloAgent.configMode(agents[key])
           let item = agents[key]
           if (!item)
             item = agents[key] = {
               name: key,
-              mode: "all",
+              mode,
               permission: Permission.merge(defaults, user),
               options: {},
               native: false,
@@ -285,7 +285,7 @@ export const layer = Layer.effect(
           item.description = value.description ?? item.description
           item.temperature = value.temperature ?? item.temperature
           item.topP = value.top_p ?? item.topP
-          item.mode = value.mode ?? item.mode
+          item.mode = mode
           item.color = value.color ?? item.color
           item.hidden = value.hidden ?? item.hidden
           item.name = value.name ?? item.name
@@ -295,10 +295,11 @@ export const layer = Layer.effect(
           item.displayName = value.displayName ?? item.displayName
           item.source = value.source ?? item.source
           // kilocode_change end
-          item.options = mergeDeep(item.options, value.options ?? {})
+          item.options = mergeDeep(item.options, value.options ?? {}) // kilocode_change
           item.permission = Permission.merge(item.permission, Permission.fromConfig(value.permission ?? {}))
           KiloAgent.processConfigItem(item) // kilocode_change - populate displayName from options
         }
+        // kilocode_change end
 
         // Ensure Truncate.GLOB is allowed unless explicitly configured
         for (const name in agents) {
