@@ -4,6 +4,7 @@ import fs from "fs/promises"
 import { KiloSessionPrompt } from "@/kilocode/session/prompt" // kilocode_change
 import { KiloSessionPromptQueue } from "@/kilocode/session/prompt-queue" // kilocode_change
 import { KiloSession } from "@/kilocode/session" // kilocode_change
+import { KiloSessionOverflow } from "@/kilocode/session/overflow" // kilocode_change
 import { Suggestion } from "@/kilocode/suggestion" // kilocode_change
 import { Question } from "@/question" // kilocode_change
 import z from "zod"
@@ -1356,19 +1357,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
           let msgs = yield* MessageV2.filterCompactedEffect(sessionID)
           msgs = KiloSessionPromptQueue.scope(sessionID, msgs) // kilocode_change - hide later queued prompts
 
-          let lastUser: MessageV2.User | undefined
-          let lastAssistant: MessageV2.Assistant | undefined
-          let lastFinished: MessageV2.Assistant | undefined
-          let tasks: (MessageV2.CompactionPart | MessageV2.SubtaskPart)[] = []
-          for (let i = msgs.length - 1; i >= 0; i--) {
-            const msg = msgs[i]
-            if (!lastUser && msg.info.role === "user") lastUser = msg.info
-            if (!lastAssistant && msg.info.role === "assistant") lastAssistant = msg.info
-            if (!lastFinished && msg.info.role === "assistant" && msg.info.finish) lastFinished = msg.info
-            if (lastUser && lastFinished) break
-            const task = msg.parts.filter((part) => part.type === "compaction" || part.type === "subtask")
-            if (task && !lastFinished) tasks.push(...task)
-          }
+          const { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs) // kilocode_change
 
           if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
 
@@ -1562,6 +1551,13 @@ NOTE: At any point in time through this workflow you should feel free to ask the
               tools,
               model,
               toolChoice: format.type === "json_schema" ? "required" : undefined,
+              // kilocode_change start - preflight context sizing and adaptive output budget
+              preflight: true,
+              reportedContextTokens:
+                lastFinished && lastFinished.summary !== true
+                  ? KiloSessionOverflow.count(lastFinished.tokens)
+                  : undefined,
+              // kilocode_change end
             })
 
             if (structured !== undefined) {
@@ -1609,7 +1605,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
                 agent: lastUser.agent,
                 model: lastUser.model,
                 auto: true,
-                overflow: !handle.message.finish,
+                overflow: handle.compactError?.() !== undefined, // kilocode_change
               })
             }
             // kilocode_change start — break out so a newer queued prompt can take over

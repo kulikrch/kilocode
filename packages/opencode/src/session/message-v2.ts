@@ -1008,6 +1008,28 @@ export const filterCompactedEffect = Effect.fnUntraced(function* (sessionID: Ses
   return filterCompacted(stream(sessionID))
 })
 
+// kilocode_change start - filtered compaction history is not chronological
+export function latest(msgs: WithParts[]) {
+  let user: User | undefined
+  let assistant: Assistant | undefined
+  let finished: Assistant | undefined
+  for (const msg of msgs) {
+    const info = msg.info
+    if (info.role === "user" && (!user || info.id > user.id)) user = info
+    if (info.role === "assistant" && (!assistant || info.id > assistant.id)) assistant = info
+    if (info.role === "assistant" && info.finish && (!finished || info.id > finished.id)) finished = info
+  }
+  const tasks = msgs.flatMap((msg) =>
+    finished && msg.info.id <= finished.id
+      ? []
+      : msg.parts.filter(
+          (part): part is CompactionPart | SubtaskPart => part.type === "compaction" || part.type === "subtask",
+        ),
+  )
+  return { user, assistant, finished, tasks }
+}
+// kilocode_change end
+
 export function fromError(
   e: unknown,
   ctx: { providerID: ProviderID; aborted?: boolean },

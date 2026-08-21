@@ -16,6 +16,9 @@ import { ModelID, ProviderID } from "@/provider/schema"
 import { Effect, Layer, Context } from "effect"
 import { InstanceState } from "@/effect"
 import { isOverflow as overflow } from "./overflow"
+import { KiloSessionPromptQueue } from "@/kilocode/session/prompt-queue" // kilocode_change
+import { KiloCompactionPayloadRecovery } from "@/kilocode/session/compaction-payload-recovery" // kilocode_change
+import { KiloCompactionChunks } from "@/kilocode/session/compaction-chunks" // kilocode_change
 
 const log = Log.create({ service: "session.compaction" })
 
@@ -249,21 +252,43 @@ When constructing the summary, try to stick to this template:
         sessionID: input.sessionID,
         model,
       })
-      const result = yield* processor.process({
+      // kilocode_change start - recover provider payload limits and oversized compactions
+      const cfg = yield* config.get()
+      const chunks = {
+        processors,
+        session,
         user: userMessage,
         agent,
         sessionID: input.sessionID,
-        tools: {},
-        system: [],
-        messages: [
-          ...modelMessages,
-          {
-            role: "user",
-            content: [{ type: "text", text: prompt }],
-          },
-        ],
         model,
+        cfg,
+        messages,
+        prompt,
+        target: processor.message,
+      }
+      const result = yield* Effect.gen(function* () {
+        const tokens = Token.estimate(JSON.stringify(modelMessages))
+        if (KiloCompactionChunks.needed({ cfg, model, tokens })) return yield* KiloCompactionChunks.process(chunks)
+        const current = yield* KiloCompactionPayloadRecovery.process({
+          processor,
+          user: userMessage,
+          agent,
+          sessionID: input.sessionID,
+          model,
+          messages: modelMessages,
+          prompt,
+          recovery: messages,
+          updateMessage: session.updateMessage,
+          updatePart: session.updatePart,
+        })
+        const error = processor.message.error ?? processor.compactError?.()
+        if (!KiloCompactionChunks.eligible({ result: current, error })) return current
+        processor.message.error = undefined
+        processor.message.finish = undefined
+        yield* session.updateMessage(processor.message)
+        return yield* KiloCompactionChunks.process(chunks)
       })
+      // kilocode_change end
 
       if (result === "compact") {
         processor.message.error = new MessageV2.ContextOverflowError({
@@ -278,6 +303,9 @@ When constructing the summary, try to stick to this template:
 
       if (result === "continue" && input.auto) {
         if (replay) {
+          // kilocode_change start - summarize a replay that cannot fit after compaction
+          replay = yield* KiloCompactionChunks.replay({ ...chunks, replay })
+          // kilocode_change end
           const original = replay.info
           const replayMsg = yield* session.updateMessage({
             id: MessageID.ascending(),
@@ -290,6 +318,7 @@ When constructing the summary, try to stick to this template:
             tools: original.tools,
             system: original.system,
           })
+          KiloSessionPromptQueue.retarget(input.sessionID, replayMsg.id) // kilocode_change
           for (const part of replay.parts) {
             if (part.type === "compaction") continue
             const replayPart =
@@ -333,6 +362,7 @@ When constructing the summary, try to stick to this template:
               agent: userMessage.agent,
               model: userMessage.model,
             })
+            KiloSessionPromptQueue.retarget(input.sessionID, continueMsg.id) // kilocode_change
             const text =
               (input.overflow
                 ? "The previous request exceeded the provider's size limit due to large media attachments. The conversation was compacted and media files were removed from context. If the user was asking about attached images or files, explain that the attachments were too large to process and suggest they try again with smaller or fewer files.\n\n"
@@ -386,6 +416,7 @@ When constructing the summary, try to stick to this template:
         auto: input.auto,
         overflow: input.overflow,
       })
+      KiloSessionPromptQueue.retarget(input.sessionID, msg.id) // kilocode_change
     })
 
     return Service.of({

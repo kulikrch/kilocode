@@ -32,6 +32,9 @@ import { InstallationVersion } from "@/installation/version"
 import { EffectBridge } from "@/effect"
 import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
+import { KiloLLM } from "@/kilocode/session/llm" // kilocode_change
+import { KiloSessionOverflow } from "@/kilocode/session/overflow" // kilocode_change
+import { usable } from "./overflow" // kilocode_change
 
 const log = Log.create({ service: "llm" })
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
@@ -50,6 +53,8 @@ export type StreamInput = {
   tools: Record<string, Tool>
   retries?: number
   toolChoice?: "auto" | "required" | "none"
+  preflight?: boolean // kilocode_change - estimate outgoing context before provider request
+  reportedContextTokens?: number // kilocode_change - provider-reported context from the previous turn
 }
 
 export type StreamRequest = StreamInput & {
@@ -251,6 +256,46 @@ const live: Layer.Layer<
         })
       }
 
+      // kilocode_change start - proactive compaction and adaptive output budget
+      const schemas = Object.fromEntries(
+        Object.entries(tools).map(([name, item]) => [
+          name,
+          { description: item.description, inputSchema: item.inputSchema },
+        ]),
+      )
+      const estimated: ModelMessage[] =
+        isOpenaiOauth || isWorkflow
+          ? [
+              { role: "system", content: isOpenaiOauth ? String(options.instructions ?? "") : system.join("\n") },
+              ...messages,
+            ]
+          : messages
+      const preflight = input.preflight === true && KiloSessionOverflow.enabled({ cfg, model: input.model })
+      const cap = KiloLLM.needsEstimate({ model: input.model, configured: params.maxOutputTokens })
+      const usage = cap || preflight ? KiloSessionOverflow.measure({ messages: estimated, tools: schemas }) : undefined
+      const maxOutputTokens = KiloLLM.capOutputTokens({
+        model: input.model,
+        messages: estimated,
+        tools: schemas,
+        configured: params.maxOutputTokens,
+        usage,
+        reported: input.reportedContextTokens,
+      })
+      if (
+        preflight &&
+        usage &&
+        KiloSessionOverflow.shouldCompact({
+          cfg,
+          model: input.model,
+          usable: usable({ cfg, model: input.model }),
+          tokens: usage.normalized,
+          continuation: usage.continuation,
+        })
+      ) {
+        return yield* Effect.fail(new KiloSessionOverflow.PreflightError())
+      }
+      // kilocode_change end
+
       // Wire up toolExecutor for DWS workflow models so that tool calls
       // from the workflow service are executed via opencode's tool system
       // and results sent back over the WebSocket.
@@ -388,7 +433,7 @@ const live: Layer.Layer<
         activeTools: Object.keys(tools).filter((x) => x !== "invalid"),
         tools,
         toolChoice: input.toolChoice,
-        maxOutputTokens: params.maxOutputTokens,
+        maxOutputTokens, // kilocode_change - fit output into remaining context
         abortSignal: input.abort,
         headers: {
           ...(input.model.providerID.startsWith("kilo") // kilocode_change

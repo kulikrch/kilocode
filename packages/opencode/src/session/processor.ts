@@ -22,6 +22,7 @@ import { Suggestion } from "@/kilocode/suggestion" // kilocode_change
 import { errorMessage } from "@/util/error"
 import { Log } from "@/util"
 import { isRecord } from "@/util/record"
+import { KiloSessionOverflow } from "@/kilocode/session/overflow" // kilocode_change
 
 const DOOM_LOOP_THRESHOLD = 3
 const log = Log.create({ service: "session.processor" })
@@ -46,6 +47,7 @@ export interface Handle {
     },
   ) => Effect.Effect<void>
   readonly process: (streamInput: LLM.StreamInput) => Effect.Effect<Result>
+  readonly compactError?: () => ReturnType<typeof MessageV2.ContextOverflowError.prototype.toObject> | undefined // kilocode_change
 }
 
 type Input = {
@@ -71,6 +73,7 @@ interface ProcessorContext extends Input {
   snapshot: string | undefined
   blocked: boolean
   needsCompaction: boolean
+  compactionError: ReturnType<typeof MessageV2.ContextOverflowError.prototype.toObject> | undefined // kilocode_change
   currentText: MessageV2.TextPart | undefined
   reasoningMap: Record<string, MessageV2.ReasoningPart>
   stepStart: number // kilocode_change
@@ -122,6 +125,7 @@ export const layer: Layer.Layer<
         snapshot: initialSnapshot,
         blocked: false,
         needsCompaction: false,
+        compactionError: undefined, // kilocode_change
         currentText: undefined,
         reasoningMap: {},
         stepStart: 0, // kilocode_change
@@ -448,6 +452,9 @@ export const layer: Layer.Layer<
               isOverflow({ cfg: yield* config.get(), tokens: usage.tokens, model: ctx.model })
             ) {
               ctx.needsCompaction = true
+              ctx.compactionError = new MessageV2.ContextOverflowError({
+                message: "Input exceeds context window of this model",
+              }).toObject() // kilocode_change
             }
             return
           }
@@ -571,9 +578,25 @@ export const layer: Layer.Layer<
       })
 
       const halt = Effect.fn("SessionProcessor.halt")(function* (e: unknown) {
+        // kilocode_change start - internal preflight signal, not a provider failure
+        if (e instanceof KiloSessionOverflow.PreflightError) {
+          ctx.needsCompaction = true
+          return
+        }
+        // kilocode_change end
         slog.error("process", { error: errorMessage(e), stack: e instanceof Error ? e.stack : undefined })
         const error = parse(e)
         if (MessageV2.ContextOverflowError.isInstance(error)) {
+          // kilocode_change start - retain the provider error for payload/chunk recovery
+          ctx.compactionError = error
+          if ((yield* config.get()).compaction?.auto === false && !ctx.assistantMessage.summary) {
+            ctx.assistantMessage.error = error
+            ctx.assistantMessage.finish = "error"
+            yield* bus.publish(Session.Event.Error, { sessionID: ctx.sessionID, error })
+            yield* status.set(ctx.sessionID, { type: "idle" })
+            return
+          }
+          // kilocode_change end
           ctx.needsCompaction = true
           yield* bus.publish(Session.Event.Error, { sessionID: ctx.sessionID, error })
           return
@@ -589,6 +612,7 @@ export const layer: Layer.Layer<
       const process = Effect.fn("SessionProcessor.process")(function* (streamInput: LLM.StreamInput) {
         slog.info("process")
         ctx.needsCompaction = false
+        ctx.compactionError = undefined // kilocode_change
         ctx.shouldBreak = (yield* config.get()).experimental?.continue_loop_on_deny !== true
 
         return yield* Effect.gen(function* () {
@@ -647,6 +671,7 @@ export const layer: Layer.Layer<
         },
         updateToolCall,
         completeToolCall,
+        compactError: () => ctx.compactionError, // kilocode_change
         process,
       } satisfies Handle
     })
