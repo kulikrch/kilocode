@@ -106,6 +106,7 @@ const LogLevelRef = Schema.Any.annotate({ [ZodOverride]: Log.Level })
 
 const PositiveInt = Schema.Number.check(Schema.isInt()).check(Schema.isGreaterThan(0))
 const NonNegativeInt = Schema.Number.check(Schema.isInt()).check(Schema.isGreaterThanOrEqualTo(0))
+const Percent = Schema.Number.check(Schema.isGreaterThan(0)).check(Schema.isLessThanOrEqualTo(100)) // kilocode_change
 
 const InfoSchema = Schema.Struct({
   $schema: Schema.optional(Schema.String).annotate({
@@ -233,6 +234,12 @@ const InfoSchema = Schema.Struct({
       auto: Schema.optional(Schema.Boolean).annotate({
         description: "Enable automatic compaction when context is full (default: true)",
       }),
+      // kilocode_change start - configurable proactive compaction
+      threshold_percent: Schema.optional(Schema.NullOr(Percent)).annotate({
+        description:
+          "Percentage of the model input/context window that triggers automatic compaction. The reserved safety buffer still applies if it would compact sooner.",
+      }),
+      // kilocode_change end
       prune: Schema.optional(Schema.Boolean).annotate({
         description: "Enable pruning of old tool outputs (default: true)",
       }),
